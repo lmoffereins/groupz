@@ -4,24 +4,29 @@
  * Groupz Admin Settings 
  * 
  * @package Groupz
- * @subpackage Admin
+ * @subpackage Administration
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-if ( !class_exists( 'Groupz_Admin_Settings' ) ) :
+if ( ! class_exists( 'Groupz_Admin_Settings' ) ) :
 
 /**
- * Plugin class
+ * Main Groupz Admin Settings Class
+ * 
+ * @since 0.1
  */
 class Groupz_Admin_Settings {
 
 	/**
 	 * Return all groupz settings sections
+	 *
+	 * @since 0.1
+	 * 
 	 * @return array The sections as an array of section_id => $args
 	 */
-	public function get_settings_sections(){
+	public function get_settings_sections() {
 		return apply_filters( 'groupz_settings_sections', array(
 
 			/** Main Settings ************************************************/
@@ -30,7 +35,7 @@ class Groupz_Admin_Settings {
 				'title'    => __('Main Settings', 'groupz'),
 				'callback' => array( $this, 'main_section_info' ),
 				'page'     => 'groupz'
-				),
+			),
 
 			/** Display Settings *********************************************/
 
@@ -38,7 +43,7 @@ class Groupz_Admin_Settings {
 				'title'    => __('Display Settings', 'groupz'),
 				'callback' => array( $this, 'display_section_info' ),
 				'page'     => 'groupz'
-				),
+			),
 
 			/** Read Settings ************************************************/
 		
@@ -46,7 +51,7 @@ class Groupz_Admin_Settings {
 				'title'    => __('Read Settings', 'groupz'),
 				'callback' => array( $this, 'read_section_info' ),
 				'page'     => 'groupz'
-				),
+			),
 		
 			/** Edit Settings ************************************************/
 		
@@ -54,17 +59,19 @@ class Groupz_Admin_Settings {
 				'title'    => __('Edit Settings', 'groupz'),
 				'callback' => array( $this, 'edit_section_info' ),
 				'page'     => 'groupz'
-				)
+			)
 
-			) );
+		) );
 	}
 
 	/**
 	 * Return all groupz settings fields
+	 *
+	 * @since 0.1
 	 * 
 	 * @return array The fields as an array of field_id => $args
 	 */
-	public function get_settings_fields(){
+	public function get_settings_fields() {
 		return apply_filters( 'groupz_settings_fields', array( 
 
 			/** Main Settings ************************************************/
@@ -76,7 +83,7 @@ class Groupz_Admin_Settings {
 				'sanitize' => 'intval',
 				'page'     => 'groupz',
 				'section'  => 'groupz_main_section'
-				),
+			),
 			
 			/** Display Settings *********************************************/
 
@@ -87,7 +94,7 @@ class Groupz_Admin_Settings {
 				'sanitize' => 'intval',
 				'page'     => 'groupz',
 				'section'  => 'groupz_display_section'
-				),
+			),
 
 			// Whether to show group parent in dropdown
 			'groupz_dropdown_show_parent' => array(
@@ -96,7 +103,7 @@ class Groupz_Admin_Settings {
 				'sanitize' => 'intval',
 				'page'     => 'groupz',
 				'section'  => 'groupz_display_section'
-				),
+			),
 
 			/** Read Settings ************************************************/
 
@@ -107,7 +114,7 @@ class Groupz_Admin_Settings {
 				'sanitize' => array( $this, 'sanitize_post_types' ),
 				'page'     => 'groupz',
 				'section'  => 'groupz_read_section'
-				),
+			),
 
 			// Whether to render groupless posts private
 			// @todo Fix revert to private
@@ -117,7 +124,7 @@ class Groupz_Admin_Settings {
 			// 	'sanitize' => 'intval',
 			// 	'page'     => 'groupz',
 			// 	'section'  => 'groupz_read_section'
-			// 	),
+			// ),
 
 			// The symbol to mark the group assigned posts
 			'groupz_post_marking' => array(
@@ -126,7 +133,7 @@ class Groupz_Admin_Settings {
 				'sanitize' => 'sanitize_text_field',
 				'page'     => 'groupz',
 				'section'  => 'groupz_read_section'
-				),
+			),
 
 			/** Edit Settings ************************************************/
 
@@ -137,36 +144,40 @@ class Groupz_Admin_Settings {
 				'sanitize' => array( $this, 'sanitize_post_types' ),
 				'page'     => 'groupz',
 				'section'  => 'groupz_edit_section'
-				)
+			)
 
-			) );
+		) );
 	}
 
 	/**
-	 * Setup Groups Settings
+	 * Setup Groups Admin Settings
+	 *
+	 * @since 0.1
 	 */
-	public function __construct(){
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+	public function __construct() {
+		add_action( 'admin_init',       array( $this, 'register_settings' ) );
+		add_action( 'admin_menu',       array( $this, 'admin_menu'        ) );
 
-		add_action( 'groupz_uninstall', array( $this, 'remove_settings' ) );
+		add_action( 'groupz_uninstall', array( $this, 'remove_settings'   ) );
 	}
 
 	/**
 	 * Register all plugin settings
 	 * 
+	 * @since 0.1
+	 * 
 	 * @uses self::get_settings_sections() To fetch all the sections to render
 	 * @uses self::get_settings_fields() To fetch all the fields to render
 	 */
-	public function register_settings(){
+	public function register_settings() {
 
 		// Register all sections
-		foreach ( $this->get_settings_sections() as $section_id => $args ){
+		foreach ( $this->get_settings_sections() as $section_id => $args ) {
 			add_settings_section( $section_id, $args['title'], $args['callback'], $args['page'] );
 		}
 
 		// Register all fields
-		foreach ( $this->get_settings_fields() as $field_id => $args ){
+		foreach ( $this->get_settings_fields() as $field_id => $args ) {
 			add_settings_field( $field_id, $args['title'], $args['callback'], $args['page'], $args['section'] );
 			register_setting( $args['page'], $field_id, $args['sanitize'] );
 		}
@@ -174,11 +185,12 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Delete all settings
+	 * 
+	 * @since 0.1
 	 *
-	 * @uses self::get_settings_fields()
-	 * @return void
+	 * @uses Groupz_Admin_Settings::get_settings_fields()
 	 */
-	public function remove_settings(){
+	public function remove_settings() {
 		foreach ( $this->get_settings_fields() as $field_id => $args ){
 			delete_option( $field_id );
 		}
@@ -186,15 +198,25 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Add the settings menu
+	 * 
+	 * @since 0.1
 	 */
-	public function admin_menu(){
-		add_options_page( __('Groupz Settings', 'groupz'), __('Groupz', 'groupz'), 'manage_options', 'groupz', array( $this, 'admin_page' ) );
+	public function admin_menu() {
+		add_options_page( 
+			__('Groupz Settings', 'groupz'), 
+			'Groupz', 
+			'manage_options', 
+			'groupz', 
+			array( $this, 'admin_page' ) 
+		);
 	}
 
 	/**
-	 * Render the admin page's HTML
+	 * Output the admin page's HTML
+	 * 
+	 * @since 0.1
 	 */
-	public function admin_page(){
+	public function admin_page() {
 		?>
 			<div class="wrap">
 				<?php screen_icon(); ?>
@@ -213,8 +235,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the lead information for main section
+	 * 
+	 * @since 0.1
 	 */
-	public function main_section_info(){
+	public function main_section_info() {
 		?>
 			<p>
 				<?php printf( __('The main Groupz settings. If you are ready to start using groups, <a href="%s">go there!</a>', 'groupz'), groupz_get_admin_page_url() ); ?>
@@ -224,15 +248,19 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the lead information for display section
+	 *
+	 * @since 0.1
 	 */
-	public function display_section_info(){
+	public function display_section_info() {
 		// Nothing to note
 	}
 
 	/**
 	 * Output the lead information for read section
+	 *
+	 * @since 0.1
 	 */
-	public function read_section_info(){
+	public function read_section_info() {
 		?>
 			<p>
 				<?php _e('Setup your read privileges and additional options.', 'groupz'); ?>
@@ -246,8 +274,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the lead information for edit section
+	 *
+	 * @since 0.1
 	 */
-	public function edit_section_info(){
+	public function edit_section_info() {
 		echo '<p>'. __('Setup your edit privileges and additional options.', 'groupz') .'</p>';
 	}
 
@@ -255,8 +285,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to use chosen.js
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_propagate(){
+	public function settings_field_propagate() {
 		?>
 			<input name="groupz_propagate" type="checkbox" id="groupz_propagate" value="1" <?php checked( get_option( 'groupz_propagate' ) ); ?> />
 			<label for="groupz_propagate"><span class="description"><?php _e('Whether to propagate group read privileges to child posts. Recommended. Groupz has no option to manage propagation on a per-group basis. NOTE: This can get heavy when your post has many children (bbPress forums for example).', 'groupz'); ?></span></label>
@@ -265,8 +297,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to use chosen.js
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_use_chosen(){
+	public function settings_field_use_chosen() {
 		?>
 			<input name="groupz_use_chosen" type="checkbox" id="groupz_use_chosen" value="1" <?php checked( get_option( 'groupz_use_chosen' ) ); ?> />
 			<label for="groupz_use_chosen"><span class="description"><?php printf( __('Generate fancy select boxes with <a href="%s">chosen.js</a> instead of multiple checkboxes when selecting groups.', 'groupz'), 'http://harvesthq.github.com/chosen/' ); ?></span></label>
@@ -275,8 +309,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to show group parents in dropdown
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_dropdown_show_parent(){
+	public function settings_field_dropdown_show_parent() {
 		?>
 			<input name="groupz_dropdown_show_parent" type="checkbox" id="groupz_dropdown_show_parent" value="1" <?php checked( get_option( 'groupz_dropdown_show_parent' ) ); ?> />
 			<label for="groupz_dropdown_show_parent"><span class="description"><?php _e('Adds for each child group it\'s parent in the group select dropdown.', 'groupz'); ?></span></label>
@@ -285,8 +321,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to enable read privileges
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_read_post_types(){
+	public function settings_field_read_post_types() {
 		$option = get_option( 'groupz_read_post_types', array() ); ?>
 
 			<p>
@@ -308,8 +346,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to render posts private
+	 * 
+	 * @since 0.1
 	 */
-	public function settings_field_set_private(){
+	public function settings_field_set_private() {
 		?>
 			<input disabled name="groupz_set_private" type="checkbox" id="groupz_set_private" value="1" <?php checked( get_option( 'groupz_set_private' ) ); ?> />
 			<label for="groupz_set_private"><span class="description"><?php _e( 'On group deletion, set the associated items visibility to private to prevent all items being disclosed for all users.', 'groupz' ); ?></span> Not active yet.</label>
@@ -318,8 +358,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to add a post marking
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_post_marking(){
+	public function settings_field_post_marking() {
 		?>
 			<input name="groupz_post_marking" type="text" id="groupz_post_marking" value="<?php echo get_option( 'groupz_post_marking', '' ); ?>" class="small-text" /><br/>
 			<label for="groupz_post_marking"><span class="description"><?php _e( 'Set a symbol like * to mark your group assigned posts. For admins and editors only. Set empty to disable.', 'groupz' ); ?></span></label>
@@ -328,8 +370,10 @@ class Groupz_Admin_Settings {
 
 	/**
 	 * Output the field for the setting to enable edit privileges
+	 *
+	 * @since 0.1
 	 */
-	public function settings_field_edit_post_types(){
+	public function settings_field_edit_post_types() {
 		$option = get_option( 'groupz_edit_post_types', array() ); ?>
 
 			<p>
@@ -354,21 +398,31 @@ class Groupz_Admin_Settings {
 	 * Return post types input sanitized
 	 *
 	 * Required to return empty array if no types are selected
+	 *
+	 * @since 0.1
 	 * 
 	 * @param mixed $input
 	 * @return array $input
 	 */
-	public function sanitize_post_types( $input ){
+	public function sanitize_post_types( $input ) {
 
-		if ( !isset( $input ) || empty( $input ) || !is_array( $input ) )
+		if ( ! isset( $input ) || empty( $input ) || ! is_array( $input ) )
 			$input = array();
 
 		return $input;
 	}
-
 }
 
-new Groupz_Admin_Settings();
-
 endif; // class_exists
+
+/**
+ * Setup Groupz Admin Settings
+ * 
+ * @since 0.1
+ *
+ * @uses Groupz_Admin_Settings
+ */
+function groupz_admin_settings() {
+	groupz()->admin->settings = new Groupz_Admin_Settings;
+}
 

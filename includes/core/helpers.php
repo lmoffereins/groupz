@@ -1,7 +1,7 @@
 <?php
 
 /** 
- * Groupz Helper functions
+ * Groupz Helper Functions
  *
  * This file contains a manipulated copy of the dropdown and
  * list functions in includes/category-template.php. It is 
@@ -20,6 +20,9 @@
  * @subpackage Core
  */
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Display or retrieve the HTML checkbox list of groups.
  *
@@ -28,6 +31,8 @@
  * @uses add_filter() To call 'groupz_checkbox_groups' on the
  *                     'list_groups' filter
  * @uses list_groups()
+ *
+ * @since 0.1
  * 
  * @param array $args Optional. Override default arguments.
  * @return string HTML content only if 'echo' argument is 0
@@ -63,6 +68,8 @@ function checkbox_groups( $args = array() ) {
 
 /**
  * Filter 'list_groups' to return the group name with a checkbox
+ * 
+ * @since 0.1
  * 
  * @param string $group_name The group name
  * @param object $group The current term object
@@ -110,6 +117,8 @@ function groupz_checkbox_groups( $group_name, $group, $args ){
  * depth argument, unless it is true. When the argument is false, it will
  * display all of the groups. When it is enabled it will use the value in
  * the 'depth' argument.
+ *
+ * @since 0.1
  *
  * @param string|array $args Optional. Override default arguments.
  * @return string HTML content only if 'echo' argument is 0.
@@ -224,6 +233,8 @@ function dropdown_groups( $args = '' ) {
  *     'title_li' (string) - See {@link get_groups()}.
  *     'depth' (int) - The max depth.
  *
+ * @since 0.1
+ *
  * @param string|array $args Optional. Override default arguments.
  * @return string HTML content only if 'echo' argument is 0.
  */
@@ -313,39 +324,45 @@ function list_groups( $args = '' ) {
 /**
  * Retrieve HTML list content for group list.
  *
+ * @since 0.1
+ *
  * @uses Groupz_Walker_Group to create HTML list content.
- * @see Groupz_Walker_Group::walk() for parameters and return description.
+ * @see  Groupz_Walker_Group::walk() for parameters and return description.
  */
 function groupz_walk_group_tree() {
 	$args = func_get_args();
 	// the user's options are the third parameter
-	if ( empty($args[2]['walker']) || !is_a($args[2]['walker'], 'Walker') )
+	if ( empty( $args[2]['walker'] ) || ! is_a( $args[2]['walker'], 'Walker' ) )
 		$walker = new Groupz_Walker_Group;
 	else
 		$walker = $args[2]['walker'];
 
-	return call_user_func_array(array( &$walker, 'walk' ), $args );
+	return call_user_func_array( array( &$walker, 'walk' ), $args );
 }
 
 /**
  * Retrieve HTML dropdown (select) content for group list.
  *
+ * @since 0.1
+ *
  * @uses Groupz_Walker_GroupDropdown to create HTML dropdown content.
- * @see Groupz_Walker_GroupDropdown::walk() for parameters and return description.
+ * @see  Groupz_Walker_GroupDropdown::walk() for parameters and return description.
  */
 function groupz_walk_group_dropdown_tree() {
 	$args = func_get_args();
 	// the user's options are the third parameter
-	if ( empty($args[2]['walker']) || !is_a($args[2]['walker'], 'Walker') )
+	if ( empty( $args[2]['walker'] ) || ! is_a( $args[2]['walker'], 'Walker' ) )
 		$walker = new Groupz_Walker_GroupDropdown;
 	else
 		$walker = $args[2]['walker'];
 
-	return call_user_func_array(array( &$walker, 'walk' ), $args );
+	return call_user_func_array( array( &$walker, 'walk' ), $args );
 }
 
 /**
  * Create HTML list of groups.
+ *
+ * @since 0.1
  *
  * @uses Walker
  */
@@ -361,7 +378,7 @@ class Groupz_Walker_Group extends Walker {
 	 * @see Walker::$db_fields
 	 * @var array
 	 */
-	var $db_fields = array ('parent' => 'parent', 'id' => 'term_id');
+	var $db_fields = array( 'parent' => 'parent', 'id' => 'term_id' );
 
 	/**
 	 * @see Walker::start_lvl()
@@ -452,6 +469,8 @@ class Groupz_Walker_Group extends Walker {
 
 /**
  * Create HTML dropdown list of groups.
+ *
+ * @since 0.1
  * 
  * @uses Walker
  */
@@ -506,6 +525,8 @@ class Groupz_Walker_GroupDropdown extends Walker {
  * - disabled
  * - custom style (data-placeholder & style=width)
  *
+ * @since 0.1
+ * 
  * @see wp_dropdown_users()
  *
  * @param string|array $args Optional. Override defaults.
@@ -558,7 +579,6 @@ function groupz_dropdown_users( $args = '' ) {
 
 		$found_selected = false;
 		foreach ( (array) $users as $user ) {
-			$user->ID = (int) $user->ID;
 			$_selected = selected( in_array( $user->ID, $selected ), true, false );
 			if ( $_selected )
 				$found_selected = true;
@@ -581,8 +601,7 @@ function groupz_dropdown_users( $args = '' ) {
 	}
 
 	$output = apply_filters('groupz_dropdown_users', $output);
-
-	if ( $echo )
+if ( $echo )
 		echo $output;
 
 	return $output;
@@ -590,12 +609,14 @@ function groupz_dropdown_users( $args = '' ) {
 
 /** Wrapper functions ********************************************/
 
-if ( !function_exists( 'dropdown_groups' ) ) :
+if ( ! function_exists( 'dropdown_groups' ) ) :
 /**
  * Return dropdown to select groups
  *
  * Wrapper function for wp_dropdown_categories(). Does
  * not support multiple select.
+ * 
+ * @since 0.1
  * 
  * @param array $args Arguments for wp_dropdown_categories
  * @return string HTML content only if 'echo' argument is 0
@@ -605,23 +626,24 @@ function dropdown_groups( $args = array() ){
 		'taxonomy' => groupz_get_group_tax_id(), 
 		'hide_empty' => 0, 'echo' => 1
 		);
-	$args = wp_parse_args( $args, $defaults );
-
+	
 	return wp_dropdown_categories( $args ); // Or in the future: wp_dropdown_terms( $args );
 }
 endif;
 
-if ( !function_exists( 'list_groups' ) ) :
+if ( ! function_exists( 'list_groups' ) ) :
 /**
  * Return list of groups
  *
  * Wrapper function for wp_list_categories(). Only
  * returns list items wrapped in <a> tags. Cannot be rewritten.
  * 
+ * @since 0.1
+ * 
  * @param array $args Arguments for wp_list_categories()
  * @return string HTML content only if 'echo' argument is 0
  */
-function list_groups( $args = array() ){
+function list_groups( $args = array() ) {
 	$defaults = array(
 		'taxonomy' => groupz_get_group_tax_id(), 'hide_empty' => 0,
 		'show_option_none' => __('No groups', 'groupz'),
@@ -635,18 +657,19 @@ endif;
 
 /** Other functions **********************************************/
 
-if ( !function_exists( 'query_find_post_type' ) ) :
+if ( ! function_exists( 'query_find_post_type' ) ) :
 /**
  * Return the queried post type from a query string
  *
  * Assumes single post type query. Used to filter the
  * query in the wpdb class.
  * 
+ * @since 0.1
+ * 
  * @param string $query The query to search
  * @return mixed String post type, boolean False if not found
  */
 function query_find_post_type( $query ){
-	$start     = strpos( $query, "post_type = '" ) + 13;
 	$length    = strpos( substr( $query, $start ), "'" );
 	$post_type = substr( $query, $start, $length );
 
@@ -654,9 +677,11 @@ function query_find_post_type( $query ){
 }
 endif;
 
-if ( !function_exists( 'debug_backtrace_function' ) ) :
+if ( ! function_exists( 'debug_backtrace_function' ) ) :
 /**
  * Find a given function in debug_backtrace()
+ * 
+ * @since 0.1
  * 
  * @param string $fn The function name
  * @return boolean
@@ -665,8 +690,7 @@ function debug_backtrace_function( $fn ){
 
 	// PHP < 5.3.6
 	if ( !defined( 'DEBUG_BACKTRACE_IGNORE_ARGS' ) )
-		define( 'DEBUG_BACKTRACE_IGNORE_ARGS', false );
-
+	
 	$fns = array();
 	foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) as $b ){
 		$fns[] = $b['function'];
@@ -676,12 +700,14 @@ function debug_backtrace_function( $fn ){
 }
 endif;
 
-if ( !function_exists( 'array_get_value' ) ) :
+if ( ! function_exists( 'array_get_value' ) ) :
 /**
  * Return array value at given position
  *
  * $pos holds at each next value the numerical postion
  * at it's key's level in $array.
+ * 
+ * @since 0.1
  * 
  * @param array $array Array to search
  * @param array $pos Course to position
@@ -698,9 +724,11 @@ function array_get_value( $arr, $pos ){
 }
 endif;
 
-if ( !function_exists( 'array_set_value' ) ) :
+if ( ! function_exists( 'array_set_value' ) ) :
 /**
  * Set new array value at given position
+ * 
+ * @since 0.1
  * 
  * @param array $arr Array to alter
  * @param array $pos Course to position

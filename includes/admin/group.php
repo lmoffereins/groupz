@@ -4,48 +4,59 @@
  * Groupz Admin Group class
  *
  * @package Groupz
- * @subpackage Admin
- */
-
-/**
- * Updating and deleting group meta is done in the Groupz_Core class.
+ * @subpackage Administration
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-if ( !class_exists( 'Groupz_Group_Admin' ) ) :
+if ( ! class_exists( 'Groupz_Group_Admin' ) ) :
 
 /**
- * Plugin class
+ * Main Groupz Group Admin Class
+ * 
+ * This class serves all the admin UI elements
+ * to handle group management.
+ *
+ * @since 0.1
  */
 class Groupz_Group_Admin {
 
-	public function __construct(){
+	public function __construct() {
 		$this->setup_globals();
 		$this->setup_actions();
 	}
 
-	public function setup_actions(){
+	/**
+	 * Setup default actions and filters
+	 * 
+	 * @since 0.1
+	 */
+	private function setup_actions() {
 
 		// Add Group Form
-		add_action( $this->tax . '_add_form_fields',  array( $this, 'add_form_fields'  ) );
-		add_action( 'after-' . $this->tax . '-table', array( $this, 'after_table_info' ) );
-		// add_action( $this->tax . '_pre_add_form',     array( $this, 'pre_add_form'     ) );
-		// add_action( $this->tax . '_add_form',         array( $this, 'add_form'         ) );
+		add_action( "{$this->tax}_add_form_fields",  array( $this, 'add_form_fields'  ) );
+		add_action( "after-{$this->tax}-table",      array( $this, 'after_table_info' ) );
+		// add_action( "{$this->tax}_pre_add_form",     array( $this, 'pre_add_form'     ) );
+		// add_action( "{$this->tax}_add_form",         array( $this, 'add_form'         ) );
 
 		// Groups List Table
-		add_filter( 'manage_edit-' . $this->tax . '_columns',          array( $this, 'add_table_column'         ), 10, 2 );
-		add_filter( 'manage_edit-' . $this->tax . '_sortable_columns', array( $this, 'add_sortable_column'      )        );
-		add_filter( 'manage_' . $this->tax . '_custom_column',         array( $this, 'add_table_column_content' ), 10, 3 );
+		add_filter( "manage_edit-{$this->tax}_columns",          array( $this, 'add_table_column'         ), 10, 2 );
+		add_filter( "manage_edit-{$this->tax}_sortable_columns", array( $this, 'add_sortable_column'      )        );
+		add_filter( "manage_{$this->tax}_custom_column",         array( $this, 'add_table_column_content' ), 10, 3 );
 		
 		// Edit Group Form
-		add_action( $this->tax . '_edit_form_fields', array( $this, 'edit_form_fields' ), 10, 2 );
-		// add_action( $this->tax . '_pre_edit_form',    array( $this, 'pre_edit_form'    ), 10, 2 );
-		// add_action( $this->tax . '_edit_form',        array( $this, 'edit_form'        ), 10, 2 );
+		add_action( "{$this->tax}_edit_form_fields", array( $this, 'edit_form_fields' ), 10, 2 );
+		// add_action( "{$this->tax}_pre_edit_form",    array( $this, 'pre_edit_form'    ), 10, 2 );
+		// add_action( "{$this->tax}_edit_form",        array( $this, 'edit_form'        ), 10, 2 );
 	}
 
-	public function setup_globals(){
+	/**
+	 * Declare default class globals
+	 *
+	 * @since 0.1
+	 */
+	private function setup_globals() {
 		$this->tax = groupz_get_group_tax_id();
 	}
 
@@ -55,15 +66,17 @@ class Groupz_Group_Admin {
 	 * Output additional form fields for the groups properties
 	 * on the add group form
 	 *
+	 * @since 0.1
+	 *
 	 * @uses Groupz_Core::group_params() To get the group parameters
 	 */
-	public function add_form_fields(){
+	public function add_form_fields() {
 
 		// Loop over all group parameters
-		foreach ( groupz()->core->group_params() as $param => $args ){
+		foreach ( groupz()->core->group_params() as $param => $args ) {
 
 			// Only when field callback is set
-			if ( !isset( $args['field_callback'] ) )
+			if ( ! isset( $args['field_callback'] ) )
 				continue;
 
 			// Output HTML
@@ -81,10 +94,11 @@ class Groupz_Group_Admin {
 	/**
 	 * Display additional information after the group list table
 	 * 
+	 * @since 0.1
+	 * 
 	 * @param string $taxonomy The taxonomy
-	 * @return void
 	 */
-	public function after_table_info( $taxonomy ){
+	public function after_table_info( $taxonomy ) {
 		?>
 			<div class="form-wrap">
 				<p>
@@ -109,10 +123,12 @@ class Groupz_Group_Admin {
 	 *
 	 * Also removes slug column
 	 *
+	 * @since 0.1
+	 *
 	 * @param array $columns List table columns
 	 * @return array $columns
 	 */
-	public function add_table_column( $columns ){
+	public function add_table_column( $columns ) {
 
 		// Remove slug column
 		if ( isset( $columns['slug'] ) ) 
@@ -129,10 +145,12 @@ class Groupz_Group_Admin {
 	/**
 	 * Adds the users column to the list table sortable columns
 	 * 
+	 * @since 0.1
+	 * 
 	 * @param array $columns List table columns
 	 * @return array $columns
 	 */
-	public function add_sortable_column( $columns ){
+	public function add_sortable_column( $columns ) {
 
 		// Add users sortable column
 		$columns['users'] = 'users';
@@ -142,15 +160,17 @@ class Groupz_Group_Admin {
 
 	/**
 	 * Return the users column content in the group list table
+	 *
+	 * @since 0.1
 	 * 
 	 * @param string $content Current content
 	 * @param string $column_name Column name
 	 * @param int $term_id Group ID
 	 */
-	public function add_table_column_content( $content, $column_name, $term_id ){
+	public function add_table_column_content( $content, $column_name, $term_id ) {
 
 		// Add users column content
-		if ( 'users' == $column_name ){
+		if ( 'users' == $column_name ) {
 
 			// Get user count
 			$users = groupz()->core->get_users( $term_id );
@@ -163,7 +183,7 @@ class Groupz_Group_Admin {
 			$children = get_term_children( $term_id, groupz_get_group_tax_id() );
 
 			// Add count of subgroup users
-			if ( !empty( $children ) ){
+			if ( ! empty( $children ) ) {
 				$sub_users = $unique_users = array();
 
 				// Gather sub group users and count them
@@ -173,7 +193,7 @@ class Groupz_Group_Admin {
 					$sub_users[$group_id] = count( $child_users );
 				}
 
-				if ( !empty( $sub_users ) ){
+				if ( ! empty( $sub_users ) ) {
 					$sub_count = number_format_i18n( array_sum( $sub_users ) + count( $users ) );
 					$uni_count = number_format_i18n( count( array_unique( array_merge( $unique_users, $users ) ) ) );
 					$args      = array( 'groupz_group_id' => $term_id, 'groupz_family' => true );
@@ -193,19 +213,21 @@ class Groupz_Group_Admin {
 	/**
 	 * Add additional form fields for the group meta on the edit group form
 	 *
+	 * @since 0.1
+	 *
 	 * @uses Groupz_Core::group_params() To get the group parameters
 	 * 
 	 * @param object $tag The tag object
 	 * @param string $taxonomy The taxonomy type
 	 * @return void
 	 */
-	public function edit_form_fields( $tag, $taxonomy ){
+	public function edit_form_fields( $tag, $taxonomy ) {
 
 		// Loop over all group parameters
-		foreach ( groupz()->core->group_params() as $param => $args ){
+		foreach ( groupz()->core->group_params() as $param => $args ) {
 
 			// Only when field callback is set
-			if ( !isset( $args['field_callback'] ) )
+			if ( ! isset( $args['field_callback'] ) )
 				continue;
 
 			// Output HTML
@@ -223,7 +245,16 @@ class Groupz_Group_Admin {
 	}
 }
 
-new Groupz_Group_Admin();
-
 endif; // class_exists
+
+/**
+ * Setup Group Admin area
+ *
+ * @since 0.x
+ *
+ * @uses Groupz_Group_Admin
+ */
+function groupz_group_admin() {
+	groupz()->admin->group = new Groupz_Group_Admin;
+}
 

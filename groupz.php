@@ -2,20 +2,22 @@
 
 /**
  * Plugin Name: Groupz
- * Plugin URI: www.offereinspictures.nl/wp/plugins/groupz/
  * Description: User groups done the right way. Management, access and more.
- * Version: 0.1
- * Author: Laurens Offereins
- * Author URI: http://www.offereinspictures.nl
+ * Plugin URI:  www.offereinspictures.nl/wp/plugins/groupz/
+ * Author:      Laurens Offereins
+ * Author URI:  http://www.offereinspictures.nl
+ * Version:     0.1
+ * Text Domain: groupz
+ * Domain Path: /languages/
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-if ( !class_exists( 'Groupz' ) ) :
+if ( ! class_exists( 'Groupz' ) ) :
 
 /**
- * Plugin class
+ * The Main Groupz Class
  *
  * Big hat tip to bbPress for the code structure.
  */
@@ -45,7 +47,7 @@ final class Groupz {
 	 * @uses Groupz::setup_globals() Setup the globals needed
 	 * @uses Groupz::setup_requires() Include the required files
 	 * @uses Groupz::setup_actions() Setup the hooks and actions
-	 * @see groupz()
+	 * @see  groupz()
 	 * @return The one true Groupz
 	 */
 	public static function instance() {
@@ -99,23 +101,27 @@ final class Groupz {
 	public function __call( $name = '', $args = array() ) { unset( $name, $args ); return null; }
 
 	/**
-	 * Declare some required class variables
+	 * Setup class default variables
+	 *
+	 * @since 0.1
 	 */
 	private function setup_globals(){
 
 		/** Version ******************************************************/
 
-		$this->version      = '0.1';
+		$this->version          = '0.1';
+		$this->db_version       = '10';
 
 		/** Plugin *******************************************************/
 
-		$this->file         = __FILE__;
-		$this->basename     = plugin_basename( $this->file );
-		$this->plugin_url   = plugins_url( '/', $this->file );
-		$this->plugin_dir   = plugin_dir_path( $this->file );
+		$this->file             = __FILE__;
+		$this->basename         = plugin_basename( $this->file );
+		$this->plugin_dir       = plugin_dir_path( $this->file );
+		$this->plugin_url       = plugin_dir_url(  $this->file );
 
-		$this->includes_dir = $this->plugin_dir .'includes/';
-		$this->includes_url = $this->plugin_url .'includes/';
+		// Includes
+		$this->includes_dir     = trailingslashit( $this->plugin_dir . 'includes' );
+		$this->includes_url     = trailingslashit( $this->plugin_url . 'includes' );
 
 		/** Group ********************************************************/
 		
@@ -127,127 +133,131 @@ final class Groupz {
 		/** Misc *********************************************************/
 		
 		$this->domain   = 'groupz';
+		$this->label    = 'Groupz';
 		$this->pre_meta = '_groupz_meta_';
 		$this->extend   = new stdClass();
 	}
 
 	/**
-	 * Load the required files for this thing to work
+	 * Include required files
+	 *
+	 * @since 0.1
 	 */
 	private function setup_requires(){
 
 		/** Core *********************************************************/
 		
-		require( $this->includes_dir . 'core/access.php'       );
-		require( $this->includes_dir . 'core/actions.php'      );
-		require( $this->includes_dir . 'core/capabilities.php' );
-		require( $this->includes_dir . 'core/extend.php'       );
-		require( $this->includes_dir . 'core/functions.php'    );
-		require( $this->includes_dir . 'core/group.php'        );
-		require( $this->includes_dir . 'core/helpers.php'      );
+		require( $this->includes_dir . 'core/actions.php'       );
+		require( $this->includes_dir . 'core/capabilities.php'  );
+		require( $this->includes_dir . 'core/core.php'          );
+		require( $this->includes_dir . 'core/extend.php'        );
+		require( $this->includes_dir . 'core/functions.php'     );
+		require( $this->includes_dir . 'core/helpers.php'       );
+
+		/** Posts ********************************************************/
+
+		// require( $this->includes_dir . 'posts/actions.php'      );
+		// require( $this->includes_dir . 'posts/capabilities.php' );
+		// require( $this->includes_dir . 'posts/functions.php'    );
+		// require( $this->includes_dir . 'posts/access.php'       );
 
 		/** Users ********************************************************/
 		
-		require( $this->includes_dir . 'users/functions.php'   );
+		require( $this->includes_dir . 'users/functions.php'    );
 
 		/** Admin ********************************************************/
 		
 		if ( is_admin() ){
-			require( $this->includes_dir . 'admin/admin.php'   );
+			require( $this->includes_dir . 'admin/admin.php'    );
 		}
 
 	}
 
 	/**
-	 * Hook the required actions to get in the action
+	 * Setup default actions and filters
+	 *
+	 * @since 0.1
 	 */
 	private function setup_actions(){
 
 		/** Plugin *******************************************************/
 
-		add_action( 'activate_'.   $this->basename, 'groupz_activation'          );
-		add_action( 'deactivate_'. $this->basename, 'groupz_deactivation'        );
-		add_action( 'uninstall_'.  $this->basename, 'groupz_uninstall'           );
-		add_action( 'plugins_loaded',               array( $this, 'textdomain' ) );
+		add_action( 'activate_'   . $this->basename, 'groupz_activation'   );
+		add_action( 'deactivate_' . $this->basename, 'groupz_deactivation' );
+		add_action( 'uninstall_'  . $this->basename, 'groupz_uninstall'    );
+		add_action( 'init', array( $this, 'load_textdomain'         ) );
 
 		/** Groups *******************************************************/
 
-		add_action( 'plugins_loaded', array( $this, 'register_group_taxonomy' ) );
-
+		add_action( 'init', array( $this, 'register_group_taxonomy' ) );
 	}
 
 	/** Plugin *******************************************************/
 
 	/**
-	 * Load the translation files
+	 * Load the translation file for current language. Checks the languages
+	 * folder inside the Groupz plugin first, and then the default WordPress
+	 * languages folder.
+	 *
+	 * Note that custom translation files inside the Groupz plugin folder
+	 * will be removed on Groupz updates. If you're creating custom
+	 * translation files, please use the global language folder.
+	 *
+	 * @since 0.1
+	 *
+	 * @uses apply_filters() Calls 'groupz_locale' with the
+	 *                        {@link get_locale()} value
+	 * @uses load_textdomain() To load the textdomain
+	 * @return bool True on success, false on failure
 	 */
-	public function textdomain(){
-		load_plugin_textdomain( $this->domain, false, dirname( $this->basename ) . '/languages/' );
+	public function load_textdomain() {
+
+		// Traditional WordPress plugin locale filter
+		$locale        = apply_filters( 'plugin_locale', get_locale(), $this->domain );
+		$mofile        = sprintf( '%1$s-%2$s.mo', $this->domain, $locale );
+
+		// Setup paths to current locale file
+		$mofile_local  = $this->lang_dir . $mofile;
+		$mofile_global = WP_LANG_DIR . '/groupz/' . $mofile;
+
+		// Look in global /wp-content/languages/groupz folder
+		if ( file_exists( $mofile_global ) ) {
+			return load_textdomain( $this->domain, $mofile_global );
+
+		// Look in local /wp-content/plugins/groupz/languages/ folder
+		} elseif ( file_exists( $mofile_local ) ) {
+			return load_textdomain( $this->domain, $mofile_local );
+		}
+
+		// Nothing found
+		return false;
 	}
 
-	/** Groups *******************************************************/
+	/** Taxonomy *****************************************************/
 
 	/**
-	 * Return read post types for which groups are registered
+	 * Register the group taxonomy
 	 *
-	 * Adds 'any' as valid read post type.
-	 *
-	 * @uses get_post_types()
-	 * @return array $post_types Post type names
-	 */
-	public function get_read_post_types(){
-		return apply_filters( 'groupz_get_read_post_types', $this->read_post_types );
-	}
-
-	/**
-	 * Return edit post types for which groups are registered
-	 *
-	 * @uses get_post_types()
-	 * @return array $post_types Post type names
-	 */
-	public function get_edit_post_types(){
-		return apply_filters( 'groupz_get_edit_post_types', $this->edit_post_types );
-	}
-
-	/**
-	 * Return unsupported default WP post types
-	 *
-	 * At this moment in time this concerns
-	 * - attachment
-	 * - nav_menu_item
+	 * @since 0.1
 	 * 
-	 * @uses get_post_types()
-	 * @return array $post_types Post type names
-	 */
-	public function get_unsupported_post_types(){
-		return apply_filters( 'groupz_get_unsupported_post_types', array( 'attachment', 'nav_menu_item' ) );
-	}
-
-	/**
-	 * Register our main element, the group taxonomy
-	 *
-	 * The 'show_admin_column' argument creates a taxonomy column
-	 * in the post tables, only since WP 3.5.
-	 *
 	 * @uses register_taxonomy()
-	 * @return void
 	 */
 	public function register_group_taxonomy(){
 
 		// Custom labels
 		$labels = array(
-			'name'              => __('Groups', 'groupz'),
-			'singular_name'     => __('Group', 'groupz'),
-			'search_items'      => __('Search Groups', 'groupz'),
-			'all_items'         => __('All Groups', 'groupz'),
-			'parent_item'       => __('Parent Group', 'groupz'),
-			'parent_item_colon' => __('Parent Group:', 'groupz'),
-			'edit_item'         => __('Edit Group', 'groupz'),
-			'view_item'         => __('View Group', 'groupz'),
-			'update_item'       => __('Update Group', 'groupz'),
-			'add_new_item'      => __('Add New Group', 'groupz'),
+			'name'              => __('Groups',         'groupz'),
+			'singular_name'     => __('Group',          'groupz'),
+			'search_items'      => __('Search Groups',  'groupz'),
+			'all_items'         => __('All Groups',     'groupz'),
+			'parent_item'       => __('Parent Group',   'groupz'),
+			'parent_item_colon' => __('Parent Group:',  'groupz'),
+			'edit_item'         => __('Edit Group',     'groupz'),
+			'view_item'         => __('View Group',     'groupz'),
+			'update_item'       => __('Update Group',   'groupz'),
+			'add_new_item'      => __('Add New Group',  'groupz'),
 			'new_item_name'     => __('New Group Name', 'groupz'),
-			);
+		);
 
 		// Custom capabilities
 		$caps = array(
@@ -255,27 +265,26 @@ final class Groupz {
 			'edit_terms'        => 'edit_groups',
 			'delete_terms'      => 'delete_groups',
 			'assign_terms'      => 'assign_groups'
-			);
+		);
 
-		register_taxonomy( 
+		register_taxonomy(
 			groupz_get_group_tax_id(), 
-			$this->get_read_post_types(), 
+			'', // Create orphan taxonomy
 			apply_filters( 'groupz_register_group_taxonomy', array(
 				'public'            => false,
 				'labels'            => $labels,
 				'capabilities'      => $caps,
 				'hierarchical'      => true,
 				'rewrite'           => false
-				) )
-			);
+			) )
+		);
 	}
-
 }
 
 /**
  * Return the one true Groupz instance
  * 
- * @return object The instance of Groupz
+ * @return object The Groupz Instance
  */
 function groupz(){
 	return Groupz::instance();
@@ -285,4 +294,3 @@ function groupz(){
 groupz();
 
 endif; // class_exists
-

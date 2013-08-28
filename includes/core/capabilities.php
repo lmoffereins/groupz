@@ -8,12 +8,14 @@
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /** Mapping ******************************************************/
 
 /**
- * Returns an array of capabilities based on the role that is being requested.
+ * Returns an array of capabilities based on the role that is being requested
+ *
+ * @since 0.1
  *
  * @param string $role Optional. Defaults to The role to load caps for
  * @uses apply_filters() Allow return value to be filtered
@@ -42,10 +44,6 @@ function groupz_get_caps_for_role( $role = '' ) {
 				'delete_groups'             => true,
 				'assign_groups'             => true,
 				'assign_others_groups'      => true,
-
-				// Manage edit group caps
-				'assign_edit_groups'        => true,
-				'assign_others_edit_groups' => true
 			);
 
 			break;
@@ -66,10 +64,6 @@ function groupz_get_caps_for_role( $role = '' ) {
 				'delete_groups'             => false,
 				'assign_groups'             => true,
 				'assign_others_groups'      => false,
-
-				// Manage edit group caps
-				'assign_edit_groups'        => true,
-				'assign_others_edit_groups' => false
 			);
 
 			break;
@@ -90,6 +84,12 @@ function groupz_get_caps_for_role( $role = '' ) {
 
 /**
  * Adds capabilities to WordPress user roles.
+ *
+ * @since 0.1
+ *
+ * @uses groupz_get_wp_roles()
+ * @uses groupz_get_caps_for_role()
+ * @uses do_action() Calls 'groupz_add_caps'
  */
 function groupz_add_caps() {
 
@@ -104,7 +104,13 @@ function groupz_add_caps() {
 }
 
 /**
- * Removes capabilities from WordPress user roles.
+ * Removes capabilities from WordPress user roles
+ *
+ * @since 0.1
+ *
+ * @uses groupz_get_wp_roles()
+ * @uses groupz_get_caps_for_role()
+ * @uses do_action() Calls 'groupz_remove_caps'
  */
 function groupz_remove_caps() {
 
@@ -121,6 +127,8 @@ function groupz_remove_caps() {
 /**
  * Get the $wp_roles global without needing to declare it everywhere
  *
+ * @since 0.1
+ * 
  * @global WP_Roles $wp_roles
  * @return WP_Roles
  */
@@ -133,4 +141,3 @@ function groupz_get_wp_roles() {
 
 	return $wp_roles;
 }
-

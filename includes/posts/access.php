@@ -8,7 +8,7 @@
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 /*****************************************************************/
 
@@ -974,8 +974,8 @@ class Groupz_Access {
 
 /**
  * Hook Access class into Groupz
- * 
- * @return void
+ *
+ * @since 0.1
  */
 function groupz_access(){
 	groupz()->access = new Groupz_Access();
@@ -989,6 +989,8 @@ endif; // class_exists
  * Return whether the current user can read a given post
  *
  * Checks post ID against methods post IDs
+ *
+ * @since 0.1
  * 
  * @param int $post_id The post ID
  * @return boolean Post is readable
@@ -1002,11 +1004,12 @@ function groupz_is_readable( $post_id ){
 /**
  * Append a marking to the post title by reference
  *
+ * @since 0.1
+ *
  * @uses groupz_add_marking()
  * @uses do_action() To call 'groupz_mark_post_title'
  * 
  * @param object $post The post to alter
- * @return void
  */
 function groupz_mark_post_title( $post ){
 
@@ -1019,12 +1022,13 @@ function groupz_mark_post_title( $post ){
 
 /**
  * Append a marking to the nav item title by reference
+ *
+ * @since 0.1
  * 
  * @uses groupz_add_marking()
  * @uses do_action() To call 'groupz_mark_nav_item_title'
  * 
  * @param object $item The nav item to alter. Passed by reference
- * @return void
  */
 function groupz_mark_nav_item_title( $item ){
 
@@ -1041,6 +1045,8 @@ function groupz_mark_nav_item_title( $item ){
 
 /**
  * Return post title appended with group marking
+ *
+ * @since 0.1
  * 
  * @param string $post_title The post title
  * @param int $post_id The post ID
@@ -1054,4 +1060,3 @@ function groupz_add_marking( $post_title, $post_id ){
 
 	return apply_filters( 'groupz_add_marking', $post_title, $post_id );	
 }
-

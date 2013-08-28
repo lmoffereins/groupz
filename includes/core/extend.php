@@ -7,16 +7,21 @@
  * @subpackage Core
  */
 
+// Exit if accessed directly
+if ( ! defined( 'ABSPATH' ) ) exit;
+
 /**
  * Extend Simple History for Groupz
  *
  * Hooks in sh-extender_load_modules action, so this function 
- * will fire only if SHE is active, making a check for plugin 
- * activity not required.
+ * will fire only if Simple History is active, making a check 
+ * with is_plugin_active() not required.
+ *
+ * @since 0.1
  */
-function groupz_extend_she(){
+function groupz_extend_simple_history(){
 
-	// Load the SHE component
+	// Load the Simple History component
 	require( groupz()->includes_dir . 'extend/simple-history.php' );
 
 	// Instantiate Simple History Extender for Groupz

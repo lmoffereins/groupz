@@ -47,7 +47,7 @@ class Groupz_Core {
 		add_action( 'delete_term_taxonomy',  array( $this, 'delete_term' )        );
 
 		// Uninstall
-		add_action( 'groupz_uninstall', array( $this, 'remove_all_meta' ) );
+		add_action( 'groupz_uninstall', 'remove_all_group_meta' );
 
 		// Filters
 		add_filter( 'get_terms_args', array( $this, 'force_groups_as_objects' ),  1, 2 );
@@ -159,7 +159,7 @@ class Groupz_Core {
 
 		// Add properties
 		foreach ( $this->group_params() as $param => $args ) {	
-			if ( ! isset( $group->$param ) && isset( $args['get_callback'] ) )
+			if ( ! isset( $group->$param ) && isset( $args['get_callback'] ) && is_callable( $args['get_callback'] ) )
 				$group->$param = call_user_func_array( $args['get_callback'], array( $group->term_id ) );
 		}
 
@@ -255,8 +255,8 @@ class Groupz_Core {
 	 *
 	 * @uses do_action() To call 'groupz_delete_group' action
 	 * @uses Groupz_Core::group_params() To get the group properties
-	 * @uses Groupz_Core::delete_meta() To delete all stored group meta
-	 * @uses Groupz_Core::remove_edit_group_from_posts() 
+	 * @uses delete_group_meta() To delete all stored group meta
+	 * @uses groupz_remove_edit_group_from_posts() 
 	 * 
 	 * @param object $group The deleted group
 	 * @param int $group_id Group ID
@@ -272,79 +272,12 @@ class Groupz_Core {
 
 		// Delete all meta
 		foreach ( $this->group_params() as $param => $args ) {
-			$this->delete_meta( $term_id, $param );
+			delete_group_meta( $term_id, $param );
 		}
 
 		// Delete edit_groups associations
 		if ( groupz_is_edit_group( $term_id ) )
-			$this->remove_edit_group_from_posts( $term_id );
-	}
-
-	/** Group Meta ***************************************************/
-
-	/**
-	 * As long as there doesn't exist a valid Term Meta API in WP,
-	 * we use a custom workaround within the wpdb->options table.
-	 */
-
-	/**
-	 * Return group meta
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param string $key Meta key
-	 * @param boolean $default Default return value
-	 * @return mixed Group meta vale
-	 */
-	public function get_meta( $group_id, $key, $default = false ) {
-		return get_option( groupz()->pre_meta . $group_id . '-' . $key, $default );
-	}
-
-	/**
-	 * Update group meta
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param string $key Meta key
-	 * @param mixed $value Meta value
-	 * @return boolean Update success
-	 */
-	public function update_meta( $group_id, $key, $value ) {
-		return update_option( groupz()->pre_meta . $group_id . '-' . $key, $value );
-	}
-
-	/**
-	 * Delete group meta
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param string $key Meta key
-	 * @return boolean Delete success
-	 */
-	public function delete_meta( $group_id, $key ) {
-		return delete_option( groupz()->pre_meta . $group_id . '-' . $key );
-	}
-
-	/**
-	 * Delete all existing group meta
-	 *
-	 * Bulk removal of all Groupz group meta in the WP database
-	 *
-	 * @since 0.1
-	 *
-	 * @uses get_groups()
-	 * @uses Groupz_Core::group_params()
-	 * @uses Groupz_Core::delete_meta()
-	 */
-	public function remove_all_meta() {
-		foreach ( get_groups() as $group ) {
-			foreach ( $this->group_params() as $param => $args ) {
-				$this->delete_meta( $group->term_id, $param );
-			}
-		}
+			groupz_remove_edit_group_from_posts( $term_id );
 	}
 
 	/** Group Users **************************************************/
@@ -358,7 +291,7 @@ class Groupz_Core {
 	 * @return array Group users
 	 */
 	public function get_users( $group_id ) {
-		return array_map( 'intval', $this->get_meta( $group_id, 'users', array() ) );
+		return array_map( 'intval', get_group_meta( $group_id, 'users', array() ) );
 	}
 
 	/**
@@ -371,7 +304,7 @@ class Groupz_Core {
 	 * @return boolean Update success
 	 */
 	public function update_users( $group_id, $users ) {
-		return $this->update_meta( $group_id, 'users', array_map( 'intval', (array) $users ) );
+		return update_group_meta( $group_id, 'users', array_map( 'intval', (array) $users ) );
 	}
 
 	/**
@@ -439,7 +372,7 @@ class Groupz_Core {
 	 * @return boolean Group is invisible
 	 */
 	public function get_invisible( $group_id ) {
-		return (bool) $this->get_meta( $group_id, 'invisible' );
+		return (bool) get_group_meta( $group_id, 'invisible' );
 	}
 
 	/**
@@ -457,7 +390,7 @@ class Groupz_Core {
 
 		do_action( 'groupz_update_invisible', $group_id, $invisible );
 
-		return $this->update_meta( $group_id, 'invisible', (bool) $invisible );
+		return update_group_meta( $group_id, 'invisible', (bool) $invisible );
 	}
 
 	/**

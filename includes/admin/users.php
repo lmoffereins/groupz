@@ -8,12 +8,14 @@
  */
 
 // Exit if accessed directly
-if ( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-if ( !class_exists( 'Groupz_Users_Admin' ) ) :
+if ( ! class_exists( 'Groupz_Users_Admin' ) ) :
 
 /**
- * Plugin class
+ * Groupz Users Admin Class
+ *
+ * @since 0.1
  */
 class Groupz_Users_Admin {
 
@@ -213,6 +215,16 @@ class Groupz_Users_Admin {
 
 }
 
-new Groupz_Users_Admin();
 endif; // class_exists
+
+/**
+ * Load users admin area
+ *
+ * @since 0.x
+ *
+ * @uses Groupz_Users_Admin
+ */
+function groupz_users_admin() {
+	groupz()->admin->users = new Groupz_Users_Admin;
+}
 
