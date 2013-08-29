@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Groupz Posts Capabilities
+ * Groupz Post & Edit Capabilities
  *
  * @package Groupz
  * @subpackage Posts

@@ -26,7 +26,7 @@ class Groupz_Admin {
 	}
 
 	/**
-	 * Setup default global variables
+	 * Define default global variables
 	 *
 	 * @since 0.1
 	 */
@@ -49,7 +49,6 @@ class Groupz_Admin {
 	private function includes(){
 		require( $this->admin_dir . 'functions.php' );
 		require( $this->admin_dir . 'group.php'     );
-		// require( $this->admin_dir . 'posts.php'     );
 		require( $this->admin_dir . 'settings.php'  );
 		require( $this->admin_dir . 'users.php'     );
 	}
@@ -62,34 +61,46 @@ class Groupz_Admin {
 	private function setup_actions(){
 
 		// Manage Groups
-		add_action( 'admin_menu',         array( $this, 'groups_menu' )       );
-		add_filter( 'parent_file',        array( $this, 'parent_file' )       );
-		add_action( 'admin_print_styles', array( $this, 'admin_page_styles' ) );
+		add_action( 'admin_menu',            array( $this, 'admin_menus'        ) );
+		add_filter( 'parent_file',           array( $this, 'groups_parent_file' ) );
+		add_action( 'admin_print_styles',    array( $this, 'admin_page_styles'  ) );
+
+		// Settings
+		add_action( 'groupz_admin_init',     array( $this, 'register_settings'  ) );
 
 		// Misc
-		add_filter( 'plugin_action_links', array( $this, 'modify_plugin_action_links' ), 10, 2 );
+		add_filter( 'plugin_action_links',   array( $this, 'plugin_action_links' ), 10, 2 );
 
-		// Chosen.js
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_chosen' ) );
-		add_action( 'admin_head',            array( $this, 'enable_chosen' )  );
+		// Chosen
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_chosen'     ) );
+		add_action( 'admin_head',            array( $this, 'enable_chosen'      ) );
 	}
 
 	/** Manage Groups ************************************************/
 
 	/**
-	 * Add a menu page to the Users menu tab
+	 * Add groups and settings menu pages
 	 * 
 	 * @since 0.1
 	 *
 	 * @uses add_submenu_page()
+	 * @uses add_options_page()
 	 */
-	public function groups_menu() {
+	public function admin_menus() {
 		add_submenu_page( 
 			'users.php', 
 			__('Manage Groups', 'groupz'), 
 			__('Groups',        'groupz'), 
 			'manage_groups', 
-			"edit-tags.php?taxonomy={$this->tax}" 
+			"edit-tags.php?taxonomy={$this->tax}"
+		);
+
+		add_options_page( 
+			__('Groupz Settings', 'groupz'), 
+			'Groupz', 
+			'manage_options', 
+			'groupz', 
+			array( $this, 'settings_page' ) 
 		);
 	}
 
@@ -107,7 +118,7 @@ class Groupz_Admin {
 	 * @param string $parent The menu parent
 	 * @return string $parent
 	 */
-	public function parent_file( $parent ) {
+	public function groups_parent_file( $parent ) {
 		if ( groupz_is_admin_page() )
 			$parent = 'users.php';
 
@@ -143,10 +154,54 @@ class Groupz_Admin {
 		<?php
 	}
 
+	/** Settings *****************************************************/
+
+	/**
+	 * Output HTML for the admin settings page
+	 * 
+	 * @since 0.1
+	 */
+	public function settings_page() {
+		?>
+			<div class="wrap">
+				<?php screen_icon(); ?>
+				<h2><?php _e('Groupz Settings', 'groupz'); ?></h2>
+
+				<form method="post" action="options.php">
+					<?php settings_fields( 'groupz' ); ?>
+					<?php do_settings_sections( 'groupz' ); ?>
+					<?php submit_button(); ?>
+				</form>
+			</div>
+		<?php
+	}
+
+	/**
+	 * Register all plugin settings
+	 * 
+	 * @since 0.1
+	 * 
+	 * @uses groupz_get_settings_sections() To fetch all the sections to render
+	 * @uses groupz_get_settings_fields() To fetch all the fields to render
+	 */
+	public function register_settings() {
+
+		// Register all sections
+		foreach ( groupz_get_settings_sections() as $section_id => $args ) {
+			add_settings_section( $section_id, $args['title'], $args['callback'], $args['page'] );
+		}
+
+		// Register all fields
+		foreach ( groupz_get_settings_fields() as $field_id => $args ) {
+			add_settings_field( $field_id, $args['title'], $args['callback'], $args['page'], $args['section'] );
+			register_setting( $args['page'], $field_id, $args['sanitize'] );
+		}
+	}
+
 	/** Misc *********************************************************/
 
 	/**
-	 * Add settings link to plugins area
+	 * Add additional links to plugins area
 	 *
 	 * @since 0.1
 	 *
@@ -154,7 +209,7 @@ class Groupz_Admin {
 	 * @param string $file Current plugin basename
 	 * @return array Processed links
 	 */
-	public static function modify_plugin_action_links( $links, $file ) {
+	public static function plugin_action_links( $links, $file ) {
 
 		// Return normal links if not Groupz
 		if ( groupz()->basename != $file )
@@ -283,7 +338,11 @@ endif; // class_exists
  * @since 0.1
  *
  * @uses Groupz_Admin
+ * @uses Groupz_Group_Admin
+ * @uses Groupz_Users_Admin
  */
 function groupz_admin() {
-	groupz()->admin = new Groupz_Admin();
+	groupz()->admin        = new Groupz_Admin;
+	groupz()->admin->group = new Groupz_Group_Admin;
+	groupz()->admin->users = new Groupz_Users_Admin;
 }

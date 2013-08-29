@@ -1,10 +1,10 @@
 <?php
 
 /**
- * Groupz Access Functions
+ * Groupz Post & Edit Access Functions
  *
  * @package Groupz
- * @subpackage Core
+ * @subpackage Posts
  */
 
 // Exit if accessed directly

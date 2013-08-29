@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Groupz Core Functionality
+ * Groupz Core Group Functionality
  *
  * @package Groupz
  * @subpackage Core
@@ -13,20 +13,28 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 if ( ! class_exists( 'Groupz_Core' ) ) :
 
 /**
- * Groupz Core Class
+ * The Groupz Core Class
+ *
+ * Hooks in all existing term actions and filters to ensure
+ * groups are allways saved and returned with all details on 
+ * board when requested.
  * 
  * @since 0.1
  */
 class Groupz_Core {
 
-	/**
-	 * Construct Groupz Core
-	 *
-	 * @since 0.1
-	 */
 	public function __construct() {
 		$this->setup_globals();
 		$this->setup_actions();
+	}
+
+	/**
+	 * Define default class globals
+	 *
+	 * @since 0.1
+	 */
+	private function setup_globals() {
+		$this->tax = groupz_get_group_tax_id();
 	}
 
 	/**
@@ -37,27 +45,20 @@ class Groupz_Core {
 	private function setup_actions() {
 
 		// Return Group
-		add_filter( 'get_terms',           array( $this, 'get_terms'        ), 10, 3 );
-		add_filter( 'get_' . $this->tax,   array( $this, 'get_term'         ), 10, 2 );
-		add_filter( 'wp_get_object_terms', array( $this, 'get_object_terms' ), 10, 4 );
+		add_filter( 'get_terms',             array( $this, 'get_terms'               ), 10, 3 );
+		add_filter( 'get_' . $this->tax,     array( $this, 'get_term'                ), 10, 2 );
+		add_filter( 'wp_get_object_terms',   array( $this, 'get_object_terms'        ), 10, 4 );
 
 		// Handle Group
-		add_action( 'created_' . $this->tax, array( $this, 'update_term' ), 10, 2 );
-		add_action( 'edited_'  . $this->tax, array( $this, 'update_term' ), 10, 2 );
-		add_action( 'delete_term_taxonomy',  array( $this, 'delete_term' )        );
-
-		// Uninstall
-		add_action( 'groupz_uninstall', 'remove_all_group_meta' );
+		add_action( 'created_' . $this->tax, array( $this, 'update_term'             ), 10, 2 );
+		add_action( 'edited_'  . $this->tax, array( $this, 'update_term'             ), 10, 2 );
+		add_action( 'delete_term_taxonomy',  array( $this, 'delete_term'             )        );
 
 		// Filters
-		add_filter( 'get_terms_args', array( $this, 'force_groups_as_objects' ),  1, 2 );
-		add_filter( 'get_terms',      array( $this, 'filter_user_groups'      ), 70, 3 );
-		add_filter( 'get_terms',      array( $this, 'filter_group_properties' ), 80, 3 );
-		add_filter( 'get_terms',      array( $this, 'unset_groups_as_objects' ), 90, 3 );
-	}
-
-	private function setup_globals() {
-		$this->tax = groupz_get_group_tax_id();
+		add_filter( 'get_terms_args',        array( $this, 'force_groups_as_objects' ),  0, 2 );
+		add_filter( 'get_terms',             array( $this, 'filter_user_groups'      ), 70, 3 );
+		add_filter( 'get_terms',             array( $this, 'filter_group_properties' ), 80, 3 );
+		add_filter( 'get_terms',             array( $this, 'unset_groups_as_objects' ), 90, 3 );
 	}
 
 	/** Return Group *************************************************/
@@ -65,7 +66,7 @@ class Groupz_Core {
 	/**
 	 * Return the requested group terms with added properties
 	 *
-	 * Send the terms that are groups through self::setup_group().
+	 * Send the terms that are groups through {@link Groupz_Core::setup_group()}.
 	 *
 	 * @since 0.1
 	 *
@@ -115,8 +116,8 @@ class Groupz_Core {
 	/**
 	 * Return group objects for wp_get_object_terms()
 	 *
-	 * Runs through all terms to see if they are a group 
-	 * and if so, send them through self::setup_group().
+	 * Runs through all terms to see if they are a group and if so, 
+	 * send them through {@link Groupz_Core::setup_group()}.
 	 *
 	 * The $taxonomies argument is passed through as an array 
 	 * of quoted taxonomy names from wp_get_object_terms().
@@ -158,45 +159,12 @@ class Groupz_Core {
 			return $group;
 
 		// Add properties
-		foreach ( $this->group_params() as $param => $args ) {	
+		foreach ( groupz_get_group_params() as $param => $args ) {	
 			if ( ! isset( $group->$param ) && isset( $args['get_callback'] ) && is_callable( $args['get_callback'] ) )
 				$group->$param = call_user_func_array( $args['get_callback'], array( $group->term_id ) );
 		}
 
 		return $group;
-	}
-
-	/**
-	 * Return the group parameters with respective values
-	 *
-	 * @since 0.1
-	 *
-	 * @uses apply_filters() To call 'groupz_group_params' filter
-	 * @return array $params
-	 */
-	public function group_params() {
-		return apply_filters( 'groupz_group_params', array(
-
-			// Users
-			'users'       => array(
-				'label'           => __('Users', 'groupz'),
-				'description'     => __('The group members.', 'groupz'),
-				'field_callback'  => array( $this, 'field_users' ),
-				'get_callback'    => array( $this, 'get_users' ),
-				'update_callback' => array( $this, 'update_users' )
-			),
-
-			// Invisibility
-			'invisible'   => array(
-				'label'           => __('Invisible', 'groupz'),
-				'description'     => __('Can only admins see this group?', 'groupz'),
-				'field_callback'  => array( $this, 'field_invisible' ),
-				'get_callback'    => array( $this, 'get_invisible' ),
-				'update_callback' => array( $this, 'update_invisible' ),
-				'inverse'         => true // Parameter works other way round
-			)
-
-		) );
 	}
 
 	/** Handle Group *************************************************/
@@ -218,7 +186,7 @@ class Groupz_Core {
 	 *
 	 * @since 0.1
 	 *
-	 * @uses Groupz_Core::group_params() To get the group properties
+	 * @uses groupz_get_group_params() To get the group properties
 	 * @uses call_user_func_array() To call the update callback for the property
 	 * 
 	 * @param int $group_id The term ID
@@ -227,7 +195,7 @@ class Groupz_Core {
 	public function update_term( $group_id, $term_taxonomy_id  ) {
 
 		// Loop over all params
-		foreach ( $this->group_params() as $param => $args ) {
+		foreach ( groupz_get_group_params() as $param => $args ) {
 
 			// Verify requirements and security
 			if (   isset( $_POST["groupz_$param"] ) 
@@ -243,9 +211,9 @@ class Groupz_Core {
 
 		// Hook created or update action
 		if ( 'created_' . $this->tax == current_filter() )
-			do_action( 'groupz_create_group', $group_id );
+			do_action( 'groupz_created_group', $group_id );
 		else
-			do_action( 'groupz_update_group', $group_id );
+			do_action( 'groupz_updated_group', $group_id );
 	}
 
 	/**
@@ -254,9 +222,8 @@ class Groupz_Core {
 	 * @since 0.1
 	 *
 	 * @uses do_action() To call 'groupz_delete_group' action
-	 * @uses Groupz_Core::group_params() To get the group properties
+	 * @uses groupz_get_group_params() To get the group properties
 	 * @uses delete_group_meta() To delete all stored group meta
-	 * @uses groupz_remove_edit_group_from_posts() 
 	 * 
 	 * @param object $group The deleted group
 	 * @param int $group_id Group ID
@@ -267,271 +234,12 @@ class Groupz_Core {
 		if ( ! groupz_is_group( $term_id ) )
 			return;
 
-		// Hook
 		do_action( 'groupz_delete_group', $term_id );
 
 		// Delete all meta
-		foreach ( $this->group_params() as $param => $args ) {
+		foreach ( groupz_get_group_params() as $param => $args ) {
 			delete_group_meta( $term_id, $param );
 		}
-
-		// Delete edit_groups associations
-		if ( groupz_is_edit_group( $term_id ) )
-			groupz_remove_edit_group_from_posts( $term_id );
-	}
-
-	/** Group Users **************************************************/
-
-	/**
-	 * Return users of given group
-	 * 
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @return array Group users
-	 */
-	public function get_users( $group_id ) {
-		return array_map( 'intval', get_group_meta( $group_id, 'users', array() ) );
-	}
-
-	/**
-	 * Update group users of group
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param array $users New Group users
-	 * @return boolean Update success
-	 */
-	public function update_users( $group_id, $users ) {
-		return update_group_meta( $group_id, 'users', array_map( 'intval', (array) $users ) );
-	}
-
-	/**
-	 * Add new group users to group
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param int|array $user_id_or_ids User ID or IDs
-	 * @return boolean Update success
-	 */
-	public function add_users( $group_id, $user_id_or_ids ) {
-		do_action( 'groupz_add_users', $group_id, (array) $user_id_or_ids );
-
-		return $this->update_users( $group_id, array_unique( array_merge( $this->get_users( $group_id ), (array) $user_id_or_ids ) ) );
-	}
-
-	/**
-	 * Remove group users from group
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param int|array $user_id_or_ids User ID or IDs
-	 * @return boolean Remove success
-	 */
-	public function remove_users( $group_id, $user_id_or_ids ) {
-		do_action( 'groupz_remove_users', $group_id, (array) $user_id_or_ids );
-
-		return $this->update_users( $group_id, array_unique( array_diff( $this->get_users( $group_id ), (array) $user_id_or_ids ) ) );
-	}
-
-	/**
-	 * Output group users param field
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 */
-	public function field_users( $group_id ) {
-		$args = array(
-			'id' => 'groupz_users', 'name' => 'groupz_users[]',
-			'selected' => $this->get_users( $group_id ),
-			'multiple' => 1, 'class' => 'chzn-select select_group_users',
-			'style' => sprintf( ' data-placeholder="%s"', __('Select a user', 'groupz') ), // !
-			'width' => '95%', // !
-			'disabled' => ! current_user_can( 'manage_group_users' )
-			);
-
-		// @todo Can do better
-		if ( isset( $args['width'] ) )
-			$args['style'] .= sprintf( ' style="width:%s;"', is_int( $args['width'] ) ? (string) $args['width'] .'px' : $args['width'] );
-
-		groupz_dropdown_users( $args );
-	}
-
-	/** Group Invisibility *******************************************/
-
-	/**
-	 * Return group invisibility
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @return boolean Group is invisible
-	 */
-	public function get_invisible( $group_id ) {
-		return (bool) get_group_meta( $group_id, 'invisible' );
-	}
-
-	/**
-	 * Update group invisibility
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 * @param boolean $invisible New group invisibility
-	 * @return boolean Update success
-	 */
-	public function update_invisible( $group_id, $invisible ) {
-		if ( $this->get_invisible( $group_id ) == $invisible )
-			return;
-
-		do_action( 'groupz_update_invisible', $group_id, $invisible );
-
-		return update_group_meta( $group_id, 'invisible', (bool) $invisible );
-	}
-
-	/**
-	 * Output group invisible param field
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $group_id Group ID
-	 */
-	public function field_invisible( $group_id ) {
-		?>
-			<input name="groupz_invisible" type="checkbox" id="groupz_invisible" value="1" <?php checked( $this->get_invisible( $group_id ) ); ?>/>
-		<?php
-	}
-
-	/** User Groups **************************************************/
-
-	/**
-	 * Return the groups of the given user
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $user_id User ID. Defaults to current user
-	 * @param array $ids Optional query arguments
-	 * @param boolean $include_ancestors Whether to insert groups from the users group ancestor tree
-	 * @return array $groups
-	 */
-	public function get_user_groups( $user_id, $args = array(), $include_ancestors = false ) {
-		$defaults = array( 'user_id' => (int) $user_id );
-
-		// Get the groups
-		$user_groups = get_groups( wp_parse_args( $args, $defaults ) );
-
-		// Setup return var
-		$groups = array();
-
-		// When ancestors are requested
-		if ( $include_ancestors ) {
-			foreach ( $user_groups as $group_id ) {
-				$ancestors = get_ancestors( is_object( $group_id ) ? $group_id->term_id : $group_id, $this->tax );
-
-				// Return terms if requested
-				if ( is_object( $group_id ) && !empty( $ancestors ) ) {
-					foreach ( $ancestors as $k => $anc_id ){
-						$ancestors[$k] = get_group( $anc_id );
-					}
-				}
-
-				$groups = array_merge( $groups, $ancestors );
-				$groups[] = $group_id;
-			}
-		} else {
-
-			// Return the groups
-			$groups = array_merge( $groups, $user_groups );
-		}
-
-		return apply_filters( 'groupz_get_user_groups', $groups );
-	}
-
-	/**
-	 * Update the groups of the given user
-	 * 
-	 * @param int $user_id User id
-	 * @param array $groups Groups
-	 */
-	public function update_user_groups( $user_id, $groups ) {
-
-		// Sanitize user ID
-		$user_id = (int) $user_id;
-
-		// Sanitize group ids
-		$group_ids = array_map( 'intval', $groups );
-
-		// Hook before
-		do_action( 'groupz_update_user_groups', $user_id, $group_ids );
-
-		// Groups to keep
-		$keep_groups = array();
-
-		// Remove previous user groups
-		foreach ( get_user_groups( $user_id ) as $group_id ) {
-
-			if ( ! in_array( $group_id, $group_ids ) ) {
-				$this->remove_users( $group_id, $user_id );
-
-			// Note if group is to keep
-			} else {
-				$keep_groups[] = $group_id;
-			}
-		}
-
-		// Update new groups
-		foreach ( $group_ids as $group_id ) {
-			if ( ! in_array( $group_id, $keep_groups ) ) {
-				$this->add_users( $group_id, $user_id );
-			}
-		}
-
-		// Hook after
-		do_action( 'groupz_updated_user_groups', $user_id, $group_ids );
-	}
-
-	/**
-	 * Remove user from all groups
-	 *
-	 * @since 0.1
-	 * 
-	 * @param int $user_id User id
-	 */
-	public function remove_user_groups( $user_id ) {
-
-		// Sanitize user ID
-		$user_id = (int) $user_id;
-
-		// Hook before
-		do_action( 'groupz_remove_user_groups', $user_id );
-
-		// Remove user from groups
-		foreach ( $this->get_user_groups( $user_id ) as $group ) {
-			$this->update_users( $group->term_id, array_diff( $group->users, array( $user_id ) ) );
-		}
-	}
-
-	/**
-	 * Return groups given user is not in
-	 * 
-	 * @since 0.1
-	 *
-	 * @uses get_groups() 
-	 * 
-	 * @param int $user_id User id
-	 * @param array $args Optional. Group query args
-	 * @return array Groups user is not in
-	 */
-	public function get_not_user_groups( $user_id, $args ) {
-		$defaults = array(
-			'not_user_id' => (int) $user_id
-		);
-
-		return get_groups( wp_parse_args( $args, $defaults ) );
 	}
 
 	/** Filters ******************************************************/
@@ -637,7 +345,7 @@ class Groupz_Core {
 			return $terms;
 
 		// Get group params
-		$params = $this->group_params();
+		$params = groupz_get_group_params();
 
 		// Loop over all groups
 		foreach ( $terms as $k => $term ) :
@@ -657,13 +365,13 @@ class Groupz_Core {
 					if ( $args[$filter] ){	
 						if ( ( !$term->$filter && !$inverse ) || ( $term->$filter && $inverse ) ) {
 							unset( $terms[$k] );
-							continue 2;	// Group is unset so continue to next group
+							continue 2;	// Group is unset so continue to next term
 						}
 
 					} else {
 						if ( ( $term->$filter && !$inverse ) || ( !$term->$filter && $inverse ) ) {
 							unset( $terms[$k] );
-							continue 2;	// Group is unset so continue to next group
+							continue 2;	// Group is unset so continue to next term
 						}
 					}
 				}
@@ -732,7 +440,7 @@ endif; // class_exists
  *
  * @uses Groupz_Core
  */
-function groupz_core(){
+function groupz_core() {
 	groupz()->core = new Groupz_Core();
 }
 

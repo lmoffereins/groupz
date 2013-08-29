@@ -15,10 +15,12 @@ if ( ! class_exists( 'Groupz_Group_Admin' ) ) :
 /**
  * Main Groupz Group Admin Class
  * 
- * This class serves all the admin UI elements
- * to handle group management.
+ * This class serves all the admin UI elements to 
+ * handle group management.
  *
  * @since 0.1
+ *
+ * @todo Empty users input field after group creation
  */
 class Groupz_Group_Admin {
 
@@ -68,12 +70,12 @@ class Groupz_Group_Admin {
 	 *
 	 * @since 0.1
 	 *
-	 * @uses Groupz_Core::group_params() To get the group parameters
+	 * @uses groupz_get_group_params() To get the group parameters
 	 */
 	public function add_form_fields() {
 
 		// Loop over all group parameters
-		foreach ( groupz()->core->group_params() as $param => $args ) {
+		foreach ( groupz_get_group_params() as $param => $args ) {
 
 			// Only when field callback is set
 			if ( ! isset( $args['field_callback'] ) )
@@ -134,7 +136,7 @@ class Groupz_Group_Admin {
 		if ( isset( $columns['slug'] ) ) 
 			unset( $columns['slug'] );
 
-		$params = groupz()->core->group_params();
+		$params = groupz_get_group_params();
 
 		// Add users column
 		$columns['users'] = $params['users']['label'];
@@ -173,7 +175,7 @@ class Groupz_Group_Admin {
 		if ( 'users' == $column_name ) {
 
 			// Get user count
-			$users = groupz()->core->get_users( $term_id );
+			$users = groupz_group_get_users( $term_id );
 			$count = number_format_i18n( count( $users ) );
 
 			// Setup return string. The data-users attribute must ensure correct group sorting
@@ -188,7 +190,7 @@ class Groupz_Group_Admin {
 
 				// Gather sub group users and count them
 				foreach ( $children as $group_id ){
-					$child_users          = groupz()->core->get_users( $group_id );
+					$child_users          = groupz_group_get_users( $group_id );
 					$unique_users         = array_unique( array_merge( $unique_users, $child_users ) );
 					$sub_users[$group_id] = count( $child_users );
 				}
@@ -215,7 +217,7 @@ class Groupz_Group_Admin {
 	 *
 	 * @since 0.1
 	 *
-	 * @uses Groupz_Core::group_params() To get the group parameters
+	 * @uses groupz_get_group_params() To get the group parameters
 	 * 
 	 * @param object $tag The tag object
 	 * @param string $taxonomy The taxonomy type
@@ -224,7 +226,7 @@ class Groupz_Group_Admin {
 	public function edit_form_fields( $tag, $taxonomy ) {
 
 		// Loop over all group parameters
-		foreach ( groupz()->core->group_params() as $param => $args ) {
+		foreach ( groupz_get_group_params() as $param => $args ) {
 
 			// Only when field callback is set
 			if ( ! isset( $args['field_callback'] ) )

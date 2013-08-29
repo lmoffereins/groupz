@@ -23,7 +23,28 @@ class Groupz_Posts_Admin {
 
 	public function __construct() {
 		$this->setup_globals();
+		$this->includes();
 		$this->setup_actions();
+	}
+
+	/**
+	 * Declare default class globals
+	 *
+	 * @since 0.x
+	 */
+	private function setup_globals() {
+		$this->tax       = groupz_get_group_tax_id();
+		$this->posts_dir = trailingslashit( groupz()->includes_dir . 'posts' );
+		$this->posts_url = trailingslashit( groupz()->includes_url . 'posts' );
+	}
+
+	/**
+	 * Include required files
+	 *
+	 * @since 0.x
+	 */
+	private function includes() {
+		require( $this->posts_dir . 'settings.php' );
 	}
 
 	/**
@@ -33,7 +54,8 @@ class Groupz_Posts_Admin {
 	 */
 	private function setup_actions() {
 
-		add_action( 'admin_print_styles', array( $this, 'admin_styles' ) );
+		// Main
+		add_action( 'admin_print_styles',       array( $this, 'admin_styles'      ) );
 
 		// List Tables
 		add_action( 'restrict_manage_posts', array( $this, 'post_groups_dropdown' ) );
@@ -53,18 +75,13 @@ class Groupz_Posts_Admin {
 		// add_action( 'manage_media_custom_column', array( $this, 'groups_table_column_content' ), 10, 2 );
 
 		// Meta Boxes
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ),  10, 2 );
-		add_action( 'save_post',      array( $this, 'save_meta_boxes' ), 10, 2 );
+		add_action( 'add_meta_boxes',      array( $this, 'add_meta_boxes'          ), 10, 2 );
+		add_action( 'save_post',           array( $this, 'save_meta_boxes'         ), 10, 2 );
+
+		add_action( 'groupz_delete_group', array( $this, 'remove_post_edit_groups' )        );
 	}
 
-	/**
-	 * Declare default class globals
-	 *
-	 * @since 0.x
-	 */
-	private function setup_globals() {
-		$this->tax = groupz_get_group_tax_id();
-	}
+	/** Main *********************************************************/
 
 	/**
 	 * Output admin wide custom styles
@@ -344,7 +361,7 @@ class Groupz_Posts_Admin {
 	 *
 	 * @since 0.1
 	 *
-	 * @uses Groupz::get_read_post_types() To allow for assigned post types
+	 * @uses groupz_get_read_post_types() To allow for assigned post types
 	 * @uses add_meta_box() To add the meta boxes
 	 * 
 	 * @param string $post_type The post type to add meta boxes for
@@ -467,7 +484,7 @@ class Groupz_Posts_Admin {
 		 * If current user can not assign others groups, the already
 		 * assigned others groups will be added to the update array.
 		 * 
-		 * @uses Groupz_Core::update_post_groups() To do the updating
+		 * @uses groupz_update_post_groups() To do the updating
 		 */
 		if (   isset( $_POST['groupz_post_groups_nonce'] ) 
 			&& wp_verify_nonce( $_POST['groupz_post_groups_nonce'], 'groupz_post_groups' ) 
@@ -489,7 +506,7 @@ class Groupz_Posts_Admin {
 			}
 
 			// Update taxonomy relationship
-			groupz()->core->update_post_groups( $post_id, $group_ids );
+			groupz_update_post_groups( $post_id, $group_ids );
 		}
 
 		/**
@@ -499,8 +516,8 @@ class Groupz_Posts_Admin {
 		 * If current user can not assign others edit groups, the already
 		 * assigned others edit groups will be added to the update array.
 		 *
-		 * @uses Groupz_Core::update_post_edit_groups() To do the updating
-		 * @uses Groupz_Core::remove_post_edit_groups() To remove edit groups if non submitted
+		 * @uses groupz_update_post_edit_groups() To do the updating
+		 * @uses groupz_remove_post_edit_groups() To remove edit groups if non submitted
 		 */
 		if (   isset( $_POST['groupz_edit_groups_nonce'] ) 
 			&& wp_verify_nonce( $_POST['groupz_edit_groups_nonce'], 'groupz_edit_groups' ) 
@@ -523,15 +540,26 @@ class Groupz_Posts_Admin {
 
 			// Update post edit groups 
 			if ( ! empty( $group_ids ) ) {
-				groupz()->core->update_post_edit_groups( $post_id, $group_ids );
+				groupz_update_post_edit_groups( $post_id, $group_ids );
 
 			// Remove post edit groups
 			} else {
-				groupz()->core->remove_post_edit_groups( $post_id );
+				groupz_remove_post_edit_groups( $post_id );
 			}
 		}
 	}
 
+	/**
+	 * Removes edit groups from posts on group deletion
+	 *
+	 * @since 0.x
+	 * 
+	 * @param int $group_id Group ID
+	 */
+	public function remove_post_edit_groups( $group_id ) {
+		if ( groupz_is_edit_group( $group_id ) )
+			groupz_remove_edit_group_from_posts( $group_id );
+	}
 }
 
 endif; // class_exists

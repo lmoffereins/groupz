@@ -156,10 +156,11 @@ final class Groupz {
 
 		/** Posts ********************************************************/
 
+		// require( $this->includes_dir . 'posts/access.php'       );
 		// require( $this->includes_dir . 'posts/actions.php'      );
+		// require( $this->includes_dir . 'posts/admin.php'        );
 		// require( $this->includes_dir . 'posts/capabilities.php' );
 		// require( $this->includes_dir . 'posts/functions.php'    );
-		// require( $this->includes_dir . 'posts/access.php'       );
 
 		/** Users ********************************************************/
 		
@@ -185,14 +186,14 @@ final class Groupz {
 		add_action( 'activate_'   . $this->basename, 'groupz_activation'   );
 		add_action( 'deactivate_' . $this->basename, 'groupz_deactivation' );
 		add_action( 'uninstall_'  . $this->basename, 'groupz_uninstall'    );
-		add_action( 'init', array( $this, 'load_textdomain'         ) );
 
 		/** Groups *******************************************************/
 
-		add_action( 'init', array( $this, 'register_group_taxonomy' ) );
+		add_action( 'groupz_init', array( $this, 'load_textdomain'         ) );
+		add_action( 'groupz_init', array( $this, 'register_group_taxonomy' ) );
 	}
 
-	/** Plugin *******************************************************/
+	/** Functions ****************************************************/
 
 	/**
 	 * Load the translation file for current language. Checks the languages
@@ -269,7 +270,7 @@ final class Groupz {
 
 		register_taxonomy(
 			groupz_get_group_tax_id(), 
-			'', // Create orphan taxonomy
+			'', // Orphan taxonomy
 			apply_filters( 'groupz_register_group_taxonomy', array(
 				'public'            => false,
 				'labels'            => $labels,

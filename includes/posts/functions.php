@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Groupz Edit and Posts Functions
+ * Groupz Post & Edit Functions
  *
  * @package Groupz
  * @subpackage Posts
@@ -17,13 +17,13 @@
  * @param array $params Group params
  * @return array $params
  */
-function groupz_posts_is_edit_group_param( $params ) {
+function groupz_posts_param_is_edit( $params ) {
 	$params['is_edit'] = array(
 		'label'           => __('Edit group', 'groupz'),
 		'description'     => __('Whether this group can be used for edit privilege.', 'groupz'),
-		'field_callback'  => 'groupz_field_is_edit',
-		'get_callback'    => 'groupz_get_is_edit',
-		'update_callback' => 'groupz_update_is_edit'
+		'field_callback'  => 'groupz_group_field_is_edit',
+		'get_callback'    => 'groupz_group_get_is_edit',
+		'update_callback' => 'groupz_group_update_is_edit'
 	);
 
 	return $params;
@@ -36,9 +36,9 @@ function groupz_posts_is_edit_group_param( $params ) {
  * 
  * @param int $group_id Group ID
  */
-function groupz_is_edit_field( $group_id ) {
+function groupz_group_field_is_edit( $group_id ) {
 	?>
-		<input name="groupz_is_edit" type="checkbox" id="groupz_is_edit" value="1" <?php checked( groupz_get_is_edit( $group_id ) ); ?>/>
+		<input name="groupz_is_edit" type="checkbox" id="groupz_is_edit" value="1" <?php checked( groupz_group_get_is_edit( $group_id ) ); ?>/>
 	<?php
 }
 
@@ -50,12 +50,12 @@ function groupz_is_edit_field( $group_id ) {
  * @param int $group_id Group ID
  * @return boolean Group is edit group
  */
-function groupz_get_is_edit( $group_id ) {
+function groupz_group_get_is_edit( $group_id ) {
 	return (bool) get_group_meta( $group_id, 'is_edit' );
 }
 
 /**
- * Update whether group is an edit group
+ * Update the group is_edit param
  *
  * @since 0.1
  * 
@@ -63,8 +63,8 @@ function groupz_get_is_edit( $group_id ) {
  * @param boolean $is_edit Group is edit group
  * @return boolean Update success
  */
-function groupz_update_is_edit( $group_id, $is_edit ) {
-	if ( groupz_get_is_edit( $group_id ) == $is_edit )
+function groupz_group_update_is_edit( $group_id, $is_edit ) {
+	if ( groupz_group_get_is_edit( $group_id ) == $is_edit )
 		return;
 
 	do_action( 'groupz_update_is_edit', $group_id, $is_edit );
@@ -80,7 +80,7 @@ function groupz_update_is_edit( $group_id, $is_edit ) {
  * @param array $params Group params
  * @return array $params
  */
-function groupz_posts_is_edit_filter_property( $params ) {
+function groupz_posts_filter_is_edit( $params ) {
 	return array_merge( $params, array( 'is_edit' ) );
 }
 
@@ -89,11 +89,11 @@ function groupz_posts_is_edit_filter_property( $params ) {
  *
  * @since 0.1
  * 
- * @param int $id Term ID
+ * @param int $group_id Term ID
  * @return boolean ID is edit group
  */
-function groupz_is_edit_group( $id ) {
-	$group = get_group( (int) $id );
+function groupz_is_edit_group( $group_id ) {
+	$group = get_group( (int) $group_id );
 	return $group->is_edit;
 }
 
@@ -388,7 +388,7 @@ function groupz_is_read_post_type( $post_type = '', $query = '' ) {
 	}
 
 	// Add 'any' as accepted read post type
-	$read_post_types = array_merge( array( 'any' ), groupz()->get_read_post_types() );
+	$read_post_types = array_merge( array( 'any' ), groupz_get_read_post_types() );
 
 	return in_array( $post_type, $read_post_types );
 }
@@ -405,7 +405,7 @@ function groupz_is_edit_post_type( $post_type = '' ) {
 	if ( empty( $post_type ) )
 		$post_type = 'post';
 
-	return in_array( $post_type, groupz()->get_edit_post_types() );
+	return in_array( $post_type, groupz_get_edit_post_types() );
 }
 
 /**
@@ -718,7 +718,7 @@ function groupz_get_posts_with_edit_groups( $args = array() ) {
 	
 	// Setup query args
 	$defaults = array(
-		'post_type' => groupz()->get_edit_post_types(),
+		'post_type' => groupz_get_edit_post_types(),
 		'fields'    => 'ids',
 		'meta_key'  => groupz()->pre_meta . 'edit_groups' // Make sure post has at least one edit group
 	);
