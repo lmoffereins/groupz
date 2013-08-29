@@ -46,6 +46,7 @@ class Groupz_Group_Admin {
 		add_filter( "manage_edit-{$this->tax}_columns",          array( $this, 'add_table_column'         ), 10, 2 );
 		add_filter( "manage_edit-{$this->tax}_sortable_columns", array( $this, 'add_sortable_column'      )        );
 		add_filter( "manage_{$this->tax}_custom_column",         array( $this, 'add_table_column_content' ), 10, 3 );
+		add_action( 'admin_head',                                array( $this, 'users_tooltip'            )        );
 		
 		// Edit Group Form
 		add_action( "{$this->tax}_edit_form_fields", array( $this, 'edit_form_fields' ), 10, 2 );
@@ -168,6 +169,7 @@ class Groupz_Group_Admin {
 	 * @param string $content Current content
 	 * @param string $column_name Column name
 	 * @param int $term_id Group ID
+	 * @return string Column content
 	 */
 	public function add_table_column_content( $content, $column_name, $term_id ) {
 
@@ -175,11 +177,12 @@ class Groupz_Group_Admin {
 		if ( 'users' == $column_name ) {
 
 			// Get user count
-			$users = groupz_group_get_users( $term_id );
-			$count = number_format_i18n( count( $users ) );
+			$users   = groupz_group_get_users( $term_id );
+			$count   = number_format_i18n( count( $users ) );
+			$tooltip = implode( '<br />', array_map( array( $this, 'display_name' ), $users ) );
 
-			// Setup return string. The data-users attribute must ensure correct group sorting
-			$content = "<a data-users='$count' href='" . esc_url ( add_query_arg( 'groupz_group_id', $term_id, 'users.php' ) ) . "'>$count</a>";
+			// Setup return string. The data-user-count attribute is for group sorting
+			$content = sprintf( '<a data-user-count="%1$s" href="%2$s" data-tooltip="%3$s">%1$s</a>', $count, esc_url( add_query_arg( 'groupz_group_id', $term_id, 'users.php' ) ), $tooltip );
 
 			// Has subgroups
 			$children = get_term_children( $term_id, groupz_get_group_tax_id() );
@@ -196,18 +199,67 @@ class Groupz_Group_Admin {
 				}
 
 				if ( ! empty( $sub_users ) ) {
-					$sub_count = number_format_i18n( array_sum( $sub_users ) + count( $users ) );
-					$uni_count = number_format_i18n( count( array_unique( array_merge( $unique_users, $users ) ) ) );
+					$uni_users = array_unique( array_merge( $users, $unique_users ) );
 					$args      = array( 'groupz_group_id' => $term_id, 'groupz_family' => true );
-					$title     = sprintf( __('User count with subgroups (%d unique)', 'groupz'), $uni_count );
+					$tooltip   = implode( '<br />', array_map( array( $this, 'display_name' ), $uni_users ) );
 
 					// Append child user count
-					$content  .= " <a href='" . esc_url ( add_query_arg( $args, 'users.php' ) ) . "' title='$title'>($sub_count)</a>";
+					$content  .= sprintf( ' <a href="%s" data-tooltip="%s">(%s)</a>', esc_url( add_query_arg( $args, 'users.php' ) ), $tooltip, number_format_i18n( count( $uni_users ) ) );
 				}
 			}
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Return user display name from given user ID
+	 *
+	 * @since 0.x
+	 * 
+	 * @param int $user_id User IDs
+	 * @return string User display name
+	 */
+	public function display_name( $user_id ) {
+		$user = get_userdata( (int) $user_id );
+
+		if ( ! $user )
+			return false;
+
+		return apply_filters( 'groupz_group_admin_display_name', $user->display_name, (int) $user_id );
+	}
+
+	/**
+	 * Output scripts for admin page tooltips
+	 *
+	 * @since 0.x
+	 *
+	 * @uses groupz_is_admin_page()
+	 */
+	public function users_tooltip() {
+		if ( ! groupz_is_admin_page() )
+			return;
+
+		// Register Tipsy
+		wp_register_script( 'tipsy', groupz()->admin->admin_url . 'scripts/jquery.tipsy.min.js', array( 'jquery' ) );
+		wp_register_style(  'tipsy', groupz()->admin->admin_url . 'scripts/tipsy.css' );
+
+		// Enqueue Tipsy
+		wp_enqueue_script( 'tipsy' );
+		wp_enqueue_style(  'tipsy' );
+		
+		?>
+			<script type="text/javascript">
+				jQuery(document).ready( function($) {
+					$('td.column-users a').tipsy({
+						title: 'data-tooltip',
+						gravity: $.fn.tipsy.autoWE,
+						html: true,
+						live: true
+					});
+				});
+			</script>
+		<?php
 	}
 
 	/** Edit Group Form **********************************************/

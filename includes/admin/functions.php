@@ -43,7 +43,7 @@ function groupz_admin_page_with_groups( $hook = '' ) {
  * @return boolean
  */
 function groupz_is_admin_page() {
-	return 'edit-'. groupz_get_group_tax_id() == get_current_screen()->id;
+	return is_admin() && 'edit-'. groupz_get_group_tax_id() == get_current_screen()->id;
 }
 
 /**
@@ -54,6 +54,6 @@ function groupz_is_admin_page() {
  * @return boolean
  */
 function groupz_is_settings_page() {
-	return 'settings_page_groupz' == get_current_screen()->id;
+	return is_admin() && 'settings_page_groupz' == get_current_screen()->id;
 }
 
