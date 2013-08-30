@@ -19,7 +19,6 @@ add_action( 'admin_init',          'groupz_admin_init', 10  );
 /** Main *********************************************************/
 
 add_action( 'groupz_init',         'groupz_core'            );
-add_action( 'groupz_init',         'groupz_admin'           );
 add_action( 'groupz_init',         'groupz_ready',      999 );
 add_action( 'admin_bar_menu',      'groupz_admin_bar',  90  );
 
@@ -29,6 +28,11 @@ add_action( 'groupz_activation',   'groupz_add_caps'        );
 add_action( 'groupz_deactivation', 'groupz_remove_caps'     );
 add_action( 'groupz_uninstall',    'groupz_remove_settings' );
 add_action( 'groupz_uninstall',    'groupz_remove_all_meta' );
+
+/** Admin ********************************************************/
+
+if ( is_admin() )
+	add_action( 'groupz_init',     'groupz_admin'           );
 
 /** Extend *******************************************************/
 

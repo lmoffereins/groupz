@@ -21,6 +21,7 @@ if ( ! class_exists( 'Groupz_Group_Admin' ) ) :
  * @since 0.1
  *
  * @todo Empty users input field after group creation
+ * @todo Reset parent group user count after child group deletion
  */
 class Groupz_Group_Admin {
 
@@ -30,15 +31,27 @@ class Groupz_Group_Admin {
 	}
 
 	/**
+	 * Declare default class globals
+	 *
+	 * @since 0.1
+	 */
+	private function setup_globals() {
+		$this->tax = groupz_get_group_tax_id();
+	}
+
+	/**
 	 * Setup default actions and filters
 	 * 
 	 * @since 0.1
 	 */
 	private function setup_actions() {
 
+		// Scripts & Styles
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_tooltip' ) );
+		add_action( 'admin_head',            array( $this, 'print_tooltip'   ) );
+		
 		// Add Group Form
 		add_action( "{$this->tax}_add_form_fields",  array( $this, 'add_form_fields'  ) );
-		add_action( "after-{$this->tax}-table",      array( $this, 'after_table_info' ) );
 		// add_action( "{$this->tax}_pre_add_form",     array( $this, 'pre_add_form'     ) );
 		// add_action( "{$this->tax}_add_form",         array( $this, 'add_form'         ) );
 
@@ -46,21 +59,74 @@ class Groupz_Group_Admin {
 		add_filter( "manage_edit-{$this->tax}_columns",          array( $this, 'add_table_column'         ), 10, 2 );
 		add_filter( "manage_edit-{$this->tax}_sortable_columns", array( $this, 'add_sortable_column'      )        );
 		add_filter( "manage_{$this->tax}_custom_column",         array( $this, 'add_table_column_content' ), 10, 3 );
-		add_action( 'admin_head',                                array( $this, 'users_tooltip'            )        );
-		
+
 		// Edit Group Form
 		add_action( "{$this->tax}_edit_form_fields", array( $this, 'edit_form_fields' ), 10, 2 );
 		// add_action( "{$this->tax}_pre_edit_form",    array( $this, 'pre_edit_form'    ), 10, 2 );
 		// add_action( "{$this->tax}_edit_form",        array( $this, 'edit_form'        ), 10, 2 );
 	}
 
+	/** Scripts & Styles *********************************************/
+
 	/**
-	 * Declare default class globals
+	 * Enqueue scripts for admin page tooltips
 	 *
-	 * @since 0.1
+	 * @since 0.x
+	 *
+	 * @uses groupz_is_admin_page()
+	 * @uses wp_register_script()
+	 * @uses wp_register_style()
+	 * @uses wp_enqueue_script()
+	 * @uses wp_enqueue_style()
 	 */
-	private function setup_globals() {
-		$this->tax = groupz_get_group_tax_id();
+	public function enqueue_tooltip() {
+		if ( ! groupz_is_admin_page() )
+			return;
+
+		// Register Tipsy
+		wp_register_script( 'tipsy', groupz()->admin->admin_url . 'scripts/jquery.tipsy.min.js', array( 'jquery' ) );
+		wp_register_style(  'tipsy', groupz()->admin->admin_url . 'scripts/tipsy.css' );
+
+		// Enqueue Tipsy
+		wp_enqueue_script( 'tipsy' );
+		wp_enqueue_style(  'tipsy' );		
+	}
+
+	/**
+	 * Output scripts for admin page tooltips
+	 *
+	 * @since 0.x
+	 *
+	 * @uses groupz_is_admin_page()
+	 */
+	public function print_tooltip() {
+		if ( ! groupz_is_admin_page() )
+			return;
+
+		?>
+<script type="text/javascript">
+	jQuery(document).ready( function($) {
+		$('td.column-users a').tipsy({
+			title:   'data-tooltip',
+			gravity: $.fn.tipsy.autoWE,
+			html:    true,
+			live:    true,
+			opacity: 1,
+			offset:  5
+		});
+	});
+</script>
+<style type="text/css">
+	.tipsy-inner {
+		background: #000;
+		padding: 4px 8px;
+		text-align: left;
+		font-size: 11px;
+		line-height: 14px;
+		font-family: 'lucida grande', tahoma, verdana, arial, sans-serif;
+	}
+</style>
+		<?php
 	}
 
 	/** Add Group Form ***********************************************/
@@ -94,31 +160,6 @@ class Groupz_Group_Admin {
 		}
 	}
 
-	/**
-	 * Display additional information after the group list table
-	 * 
-	 * @since 0.1
-	 * 
-	 * @param string $taxonomy The taxonomy
-	 */
-	public function after_table_info( $taxonomy ) {
-		?>
-			<div class="form-wrap">
-				<p>
-					<?php _e('<strong>Note:</strong><br />Deleting a group does not delete the posts in that group.'); ?>
-
-					<?php if ( get_option('_groupz_set_private') ) : 
-						 _e('Instead, posts that were only assigned to the deleted group are set to <strong>private</strong>.', 'groupz');
-					 else : 
-						 printf( _e('Instead, posts that were only assigned to the deleted group remain <strong>as is</strong> &ndash; most of the time <strong>public</strong>.', 'groupz') );
-					 endif; ?>
-
-					<?php if ( current_user_can( 'manage_options' ) ) printf( __('You can change this setting <a href="%s">here</a>.', 'groupz'), add_query_arg( 'page', 'groupz-settings', 'options-general.php' ) ); ?>
-				</p>
-			</div>
-		<?php
-	}
-
 	/** Groups List Table ********************************************/
 
 	/**
@@ -137,10 +178,18 @@ class Groupz_Group_Admin {
 		if ( isset( $columns['slug'] ) ) 
 			unset( $columns['slug'] );
 
+		// Remove posts column
+		if ( isset( $columns['posts'] ) )
+			unset( $columns['posts'] );
+
 		$params = groupz_get_group_params();
 
-		// Add users column
-		$columns['users'] = $params['users']['label'];
+		// Add users column on second place
+		$columns = array_merge( 
+			array_slice( $columns, 0, 2 ), // First array part
+			array( 'users' => $params['users']['label'] ), // Insert element
+			array_slice( $columns, 2 ) // Last array part
+		);
 
 		return $columns;
 	}
@@ -179,13 +228,13 @@ class Groupz_Group_Admin {
 			// Get user count
 			$users   = groupz_group_get_users( $term_id );
 			$count   = number_format_i18n( count( $users ) );
-			$tooltip = implode( '<br />', array_map( array( $this, 'display_name' ), $users ) );
+			$tooltip = groupz_users_tooltip( $users );
 
-			// Setup return string. The data-user-count attribute is for group sorting
-			$content = sprintf( '<a data-user-count="%1$s" href="%2$s" data-tooltip="%3$s">%1$s</a>', $count, esc_url( add_query_arg( 'groupz_group_id', $term_id, 'users.php' ) ), $tooltip );
+			// Setup content string
+			$content = sprintf( '<a href="%2$s" data-tooltip="%3$s">%1$s</a>', $count, esc_url( add_query_arg( 'groupz_group_id', $term_id, 'users.php' ) ), $tooltip );
 
 			// Has subgroups
-			$children = get_term_children( $term_id, groupz_get_group_tax_id() );
+			$children = get_subgroups( $term_id );
 
 			// Add count of subgroup users
 			if ( ! empty( $children ) ) {
@@ -201,7 +250,7 @@ class Groupz_Group_Admin {
 				if ( ! empty( $sub_users ) ) {
 					$uni_users = array_unique( array_merge( $users, $unique_users ) );
 					$args      = array( 'groupz_group_id' => $term_id, 'groupz_family' => true );
-					$tooltip   = implode( '<br />', array_map( array( $this, 'display_name' ), $uni_users ) );
+					$tooltip   = groupz_users_tooltip( $uni_users );
 
 					// Append child user count
 					$content  .= sprintf( ' <a href="%s" data-tooltip="%s">(%s)</a>', esc_url( add_query_arg( $args, 'users.php' ) ), $tooltip, number_format_i18n( count( $uni_users ) ) );
@@ -210,56 +259,6 @@ class Groupz_Group_Admin {
 		}
 
 		return $content;
-	}
-
-	/**
-	 * Return user display name from given user ID
-	 *
-	 * @since 0.x
-	 * 
-	 * @param int $user_id User IDs
-	 * @return string User display name
-	 */
-	public function display_name( $user_id ) {
-		$user = get_userdata( (int) $user_id );
-
-		if ( ! $user )
-			return false;
-
-		return apply_filters( 'groupz_group_admin_display_name', $user->display_name, (int) $user_id );
-	}
-
-	/**
-	 * Output scripts for admin page tooltips
-	 *
-	 * @since 0.x
-	 *
-	 * @uses groupz_is_admin_page()
-	 */
-	public function users_tooltip() {
-		if ( ! groupz_is_admin_page() )
-			return;
-
-		// Register Tipsy
-		wp_register_script( 'tipsy', groupz()->admin->admin_url . 'scripts/jquery.tipsy.min.js', array( 'jquery' ) );
-		wp_register_style(  'tipsy', groupz()->admin->admin_url . 'scripts/tipsy.css' );
-
-		// Enqueue Tipsy
-		wp_enqueue_script( 'tipsy' );
-		wp_enqueue_style(  'tipsy' );
-		
-		?>
-			<script type="text/javascript">
-				jQuery(document).ready( function($) {
-					$('td.column-users a').tipsy({
-						title: 'data-tooltip',
-						gravity: $.fn.tipsy.autoWE,
-						html: true,
-						live: true
-					});
-				});
-			</script>
-		<?php
 	}
 
 	/** Edit Group Form **********************************************/

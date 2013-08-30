@@ -57,3 +57,40 @@ function groupz_is_settings_page() {
 	return is_admin() && 'settings_page_groupz' == get_current_screen()->id;
 }
 
+/** Tooltip ******************************************************/
+
+/**
+ * Return users tooltip content string
+ *
+ * @since 0.x
+ * 
+ * @param array $users User IDs
+ * @return string Tooltip
+ */
+function groupz_users_tooltip( $users ) {
+	$many = 0 < ( count( $users ) - 20 ); // More than 20 users?
+
+	$tooltip = implode( '<br>', array_map( 'display_name', $many ? array_slice( $users, 0, 20 ) : $users ) );
+	if ( $many )
+		$tooltip .= '<br>' . sprintf( __('and another %d', 'groupz'), count( $users ) - 20 );
+
+	return apply_filters( 'groupz_users_tooltip', $tooltip, $users );
+}
+
+/**
+ * Return user display name from given user ID
+ *
+ * @since 0.x
+ * 
+ * @param int $user_id User IDs
+ * @return string User display name
+ */
+function display_name( $user_id ) {
+	$user = get_userdata( (int) $user_id );
+
+	if ( ! $user )
+		return false;
+
+	return apply_filters( 'groupz_display_name', $user->display_name, (int) $user_id );
+}
+

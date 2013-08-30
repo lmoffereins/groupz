@@ -93,7 +93,7 @@ function groupz_get_group_params() {
 
 		// Users
 		'users'       => array(
-			'label'           => __('Users', 'groupz'),
+			'label'           => __('Users'),
 			'description'     => '',
 			'field_callback'  => 'groupz_group_field_users',
 			'get_callback'    => 'groupz_group_get_users',
@@ -311,6 +311,20 @@ function get_group_users( $group_id ) {
  */
 function get_groups( $args = array() ) {
 	return get_terms( groupz_get_group_tax_id(), wp_parse_args( $args, array( 'hide_empty' => 0 ) ) );
+}
+
+/**
+ * Return the subgroups of a given parent group
+ *
+ * @since 0.x
+ *
+ * @uses get_term_children()
+ * 
+ * @param int $group_id Parent group ID
+ * @return array Subgroup IDs
+ */
+function get_subgroups( $group_id ) {
+	return get_term_children( $group_id, groupz_get_group_tax_id() );
 }
 
 /**

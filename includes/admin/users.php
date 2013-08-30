@@ -49,7 +49,7 @@ class Groupz_Users_Admin {
 	public static function user_groups_display( $profileuser ) {
 
 		// Bail if current user cannot edit users or manage group users
-		if ( !current_user_can( 'edit_user', $profileuser->ID ) || !current_user_can( 'manage_group_users' ) )
+		if ( ! current_user_can( 'edit_user', $profileuser->ID ) || ! current_user_can( 'manage_group_users' ) )
 			return;
 
 		// Setup select args
@@ -58,7 +58,7 @@ class Groupz_Users_Admin {
 			'name' => 'groupz-user-groups[]',
 			'width' => 301, // !
 			'selected' => get_user_groups( $profileuser->ID )
-			); ?>
+		); ?>
 
 		<h3><?php _e( 'Groups', 'groupz' ); ?></h3>
 
@@ -106,7 +106,7 @@ class Groupz_Users_Admin {
 			'name' => 'groupz_group_id', 'hierarchical' => true,
 			'id' => 'groupz-select-group',
 			'show_option_none' => __('Filter users of group&hellip;', 'groupz')
-			); ?>
+		); ?>
 
 		<label class="screen-reader-text" for="groupz-select-group"><?php _e( 'Filter users of group&hellip;', 'groupz' ) ?></label>
 		<?php dropdown_groups( $args ); ?>

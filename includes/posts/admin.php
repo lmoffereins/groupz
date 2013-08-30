@@ -55,19 +55,22 @@ class Groupz_Posts_Admin {
 	private function setup_actions() {
 
 		// Main
-		add_action( 'admin_print_styles',       array( $this, 'admin_styles'      ) );
+		add_action( 'admin_print_styles', array( $this, 'admin_styles' ) );
 
 		// List Tables
 		add_action( 'restrict_manage_posts', array( $this, 'post_groups_dropdown' ) );
 		add_action( 'restrict_manage_posts', array( $this, 'edit_groups_dropdown' ) );
+
 		foreach ( groupz_get_read_post_types() as $post_type ) {
 			add_filter( "manage_{$post_type}_posts_columns",       array( $this, 'post_read_table_column' ),     11    );
 			add_action( "manage_{$post_type}_posts_custom_column", array( $this, 'posts_table_column_content' ), 10, 2 );
 		}
+
 		foreach ( groupz_get_edit_post_types() as $post_type ) {
 			add_filter( "manage_{$post_type}_posts_columns",       array( $this, 'post_edit_table_column' ),     11    );
 			add_action( "manage_{$post_type}_posts_custom_column", array( $this, 'posts_table_column_content' ), 10, 2 );
 		}
+
 		add_action( 'pre_get_posts', array( $this, 'post_groups_list_table_query' ) );
 		add_action( 'pre_get_posts', array( $this, 'edit_groups_list_table_query' ) );
 
@@ -79,6 +82,9 @@ class Groupz_Posts_Admin {
 		add_action( 'save_post',           array( $this, 'save_meta_boxes'         ), 10, 2 );
 
 		add_action( 'groupz_delete_group', array( $this, 'remove_post_edit_groups' )        );
+
+		// Group Admin
+		add_action( "after-{$this->tax}-table", array( $this, 'after_table_info' ) );
 	}
 
 	/** Main *********************************************************/
@@ -560,6 +566,34 @@ class Groupz_Posts_Admin {
 		if ( groupz_is_edit_group( $group_id ) )
 			groupz_remove_edit_group_from_posts( $group_id );
 	}
+
+	/** Group Admin **************************************************/
+
+	/**
+	 * Display additional information after the group list table
+	 * 
+	 * @since 0.1
+	 * 
+	 * @param string $taxonomy The taxonomy
+	 */
+	public function after_table_info( $taxonomy ) {
+		?>
+			<div class="form-wrap">
+				<p>
+					<?php _e('<strong>Note:</strong><br />Deleting a group does not delete the posts in that group.'); ?>
+
+					<?php if ( get_option('_groupz_set_private') ) : 
+						 _e('Instead, posts that were only assigned to the deleted group are set to <strong>private</strong>.', 'groupz');
+					 else : 
+						 printf( _e('Instead, posts that were only assigned to the deleted group remain <strong>as is</strong> &ndash; most of the time <strong>public</strong>.', 'groupz') );
+					 endif; ?>
+
+					<?php if ( current_user_can( 'manage_options' ) ) printf( __('You can change this setting <a href="%s">here</a>.', 'groupz'), add_query_arg( 'page', 'groupz-settings', 'options-general.php' ) ); ?>
+				</p>
+			</div>
+		<?php
+	}
+
 }
 
 endif; // class_exists
